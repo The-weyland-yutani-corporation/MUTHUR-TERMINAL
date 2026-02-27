@@ -1,7 +1,10 @@
 import { NextRequest } from "next/server";
 import { MUTHUR_SYSTEM_PROMPT } from "@/lib/system-prompt";
 
-// CopilotClient and session management
+// Use Node 24 which supports node:sqlite required by the Copilot CLI
+const NODE24_PATH = "C:\\Users\\sharmave\\.nvm\\versions\\node\\v24.11.1\\bin\\node.exe";
+const COPILOT_CLI_ENTRY = "C:\\Users\\sharmave\\.nvm\\versions\\node\\v20.19.6\\bin\\node_modules\\@github\\copilot\\npm-loader.js";
+
 let clientPromise: Promise<InstanceType<
   typeof import("@github/copilot-sdk").CopilotClient
 >> | null = null;
@@ -10,7 +13,10 @@ async function getClient() {
   if (!clientPromise) {
     clientPromise = (async () => {
       const { CopilotClient } = await import("@github/copilot-sdk");
-      const client = new CopilotClient();
+      const client = new CopilotClient({
+        cliPath: NODE24_PATH,
+        cliArgs: [COPILOT_CLI_ENTRY],
+      });
       await client.start();
       return client;
     })();
@@ -32,26 +38,21 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Build the conversation by sending all messages
     const lastMessage = messages[messages.length - 1];
     const prompt = lastMessage?.content || "";
 
-    // Create a ReadableStream for SSE
     const stream = new ReadableStream({
       async start(controller) {
         const encoder = new TextEncoder();
 
         try {
-          // Listen for streaming deltas
           session.on("assistant.message_delta", (event) => {
             const data = JSON.stringify({ content: event.data.deltaContent });
             controller.enqueue(encoder.encode(`data: ${data}\n\n`));
           });
 
-          // Wait for the response
           await session.sendAndWait({ prompt });
 
-          // Signal completion
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();
         } catch (error) {
@@ -63,7 +64,6 @@ export async function POST(request: NextRequest) {
           controller.enqueue(encoder.encode(`data: ${data}\n\n`));
           controller.close();
         } finally {
-          // Clean up session
           await session.destroy().catch(() => {});
         }
       },
