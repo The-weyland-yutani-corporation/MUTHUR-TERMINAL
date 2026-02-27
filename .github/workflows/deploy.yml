@@ -43,5 +43,6 @@ jobs:
           containerAppName: ${{ env.AZURE_CONTAINER_APP_NAME }}
           imageToDeploy: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
           environmentVariables: >-
-            GITHUB_TOKEN=secretref:github-token
+            LLM_PROVIDER=anthropic
+            LLM_API_KEY=secretref:llm-api-key
             COPILOT_MODEL=secretref:copilot-model
