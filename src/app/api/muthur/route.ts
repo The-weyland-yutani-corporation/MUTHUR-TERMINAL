@@ -10,7 +10,6 @@ async function getClient() {
     clientPromise = (async () => {
       const { CopilotClient } = await import("@github/copilot-sdk");
 
-      // Build client options from environment
       const opts: Record<string, unknown> = {};
 
       // Node 22+ path for Copilot CLI (needs node:sqlite)
@@ -19,8 +18,10 @@ async function getClient() {
         opts.cliArgs = [process.env.CLI_PATH || "copilot"];
       }
 
-      // GitHub token for auth (production) — falls back to `copilot auth` login
-      if (process.env.GITHUB_TOKEN) {
+      // BYOK mode doesn't need GitHub auth
+      if (process.env.LLM_API_KEY) {
+        opts.useLoggedInUser = false;
+      } else if (process.env.GITHUB_TOKEN) {
         opts.githubToken = process.env.GITHUB_TOKEN;
       }
 
@@ -32,18 +33,37 @@ async function getClient() {
   return clientPromise;
 }
 
+function getProviderConfig() {
+  const apiKey = process.env.LLM_API_KEY;
+  if (!apiKey) return undefined;
+
+  const type = (process.env.LLM_PROVIDER || "anthropic") as
+    | "anthropic"
+    | "openai"
+    | "azure";
+  const baseUrl =
+    process.env.LLM_BASE_URL ||
+    (type === "anthropic"
+      ? "https://api.anthropic.com/v1"
+      : "https://api.openai.com/v1");
+
+  return { type, baseUrl, apiKey };
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { messages } = await request.json();
 
     const client = await getClient();
 
+    const provider = getProviderConfig();
     const session = await client.createSession({
       model: process.env.COPILOT_MODEL || "claude-sonnet-4-5",
       streaming: true,
       systemMessage: {
         content: MUTHUR_SYSTEM_PROMPT,
       },
+      ...(provider && { provider }),
     });
 
     const lastMessage = messages[messages.length - 1];
