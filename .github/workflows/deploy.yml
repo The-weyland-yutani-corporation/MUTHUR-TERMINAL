@@ -45,4 +45,3 @@ jobs:
           environmentVariables: >-
             LLM_PROVIDER=anthropic
             LLM_API_KEY=secretref:llm-api-key
-            COPILOT_MODEL=secretref:copilot-model

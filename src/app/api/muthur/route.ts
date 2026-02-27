@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     const provider = getProviderConfig();
     const session = await client.createSession({
-      model: process.env.COPILOT_MODEL || "claude-sonnet-4-5",
+      model: "claude-sonnet-4-5",
       streaming: true,
       systemMessage: {
         content: MUTHUR_SYSTEM_PROMPT,
