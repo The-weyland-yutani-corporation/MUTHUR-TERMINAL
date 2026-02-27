@@ -1,10 +1,6 @@
 import { NextRequest } from "next/server";
 import { MUTHUR_SYSTEM_PROMPT } from "@/lib/system-prompt";
 
-// Use Node 24 which supports node:sqlite required by the Copilot CLI
-const NODE24_PATH = "C:\\Users\\sharmave\\.nvm\\versions\\node\\v24.11.1\\bin\\node.exe";
-const COPILOT_CLI_ENTRY = "C:\\Users\\sharmave\\.nvm\\versions\\node\\v20.19.6\\bin\\node_modules\\@github\\copilot\\npm-loader.js";
-
 let clientPromise: Promise<InstanceType<
   typeof import("@github/copilot-sdk").CopilotClient
 >> | null = null;
@@ -13,10 +9,22 @@ async function getClient() {
   if (!clientPromise) {
     clientPromise = (async () => {
       const { CopilotClient } = await import("@github/copilot-sdk");
-      const client = new CopilotClient({
-        cliPath: NODE24_PATH,
-        cliArgs: [COPILOT_CLI_ENTRY],
-      });
+
+      // Build client options from environment
+      const opts: Record<string, unknown> = {};
+
+      // Node 22+ path for Copilot CLI (needs node:sqlite)
+      if (process.env.NODE_PATH) {
+        opts.cliPath = process.env.NODE_PATH;
+        opts.cliArgs = [process.env.CLI_PATH || "copilot"];
+      }
+
+      // GitHub token for auth (production) — falls back to `copilot auth` login
+      if (process.env.GITHUB_TOKEN) {
+        opts.githubToken = process.env.GITHUB_TOKEN;
+      }
+
+      const client = new CopilotClient(opts);
       await client.start();
       return client;
     })();
@@ -31,7 +39,7 @@ export async function POST(request: NextRequest) {
     const client = await getClient();
 
     const session = await client.createSession({
-      model: "claude-sonnet-4-5",
+      model: process.env.COPILOT_MODEL || "claude-sonnet-4-5",
       streaming: true,
       systemMessage: {
         content: MUTHUR_SYSTEM_PROMPT,
