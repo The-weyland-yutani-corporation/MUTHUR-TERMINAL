@@ -19,10 +19,8 @@ async function getClient() {
       }
 
       // BYOK mode doesn't need GitHub auth
-      if (process.env.LLM_API_KEY) {
+      if (process.env.LLM_API_KEY && process.env.LLM_BASE_URL) {
         opts.useLoggedInUser = false;
-      } else if (process.env.GITHUB_TOKEN) {
-        opts.githubToken = process.env.GITHUB_TOKEN;
       }
 
       const client = new CopilotClient(opts);
@@ -35,19 +33,14 @@ async function getClient() {
 
 function getProviderConfig() {
   const apiKey = process.env.LLM_API_KEY;
-  if (!apiKey) return undefined;
+  const baseUrl = process.env.LLM_BASE_URL;
+  if (!apiKey || !baseUrl) return undefined;
 
-  const type = (process.env.LLM_PROVIDER || "anthropic") as
-    | "anthropic"
-    | "openai"
-    | "azure";
-  const baseUrl =
-    process.env.LLM_BASE_URL ||
-    (type === "anthropic"
-      ? "https://api.anthropic.com/v1"
-      : "https://api.openai.com/v1");
-
-  return { type, baseUrl, apiKey };
+  return {
+    type: "openai" as const,
+    baseUrl,
+    apiKey,
+  };
 }
 
 export async function POST(request: NextRequest) {
