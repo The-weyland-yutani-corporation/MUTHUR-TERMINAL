@@ -22,7 +22,7 @@ An interactive web terminal that faithfully recreates the MU/TH/UR 6000 mainfram
 
 ## Prerequisites
 
-- Node.js 18+
+- Node.js 22+ (Copilot CLI requires `node:sqlite`)
 - [GitHub Copilot CLI](https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli) installed and authenticated
 - A GitHub Copilot subscription
 
@@ -51,6 +51,16 @@ src/
 └── lib/
     └── system-prompt.ts        # MUTHUR 6000 AI personality & lore
 ```
+
+## Deployment
+
+The app is containerized and deployed to **Azure Container Apps**. See `.github/workflows/deploy.yml` for the full CI/CD pipeline.
+
+- **Docker** — Multi-stage build (`node:24-alpine`), standalone Next.js output
+- **Azure auth** — OIDC federated credentials (no long-lived secrets)
+- **ACR** — Images pushed to Azure Container Registry, deployed on push to `main`
+
+See `.env.example` for environment variable reference.
 
 ## Future Roadmap
 
