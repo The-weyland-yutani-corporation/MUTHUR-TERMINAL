@@ -1,9 +1,20 @@
 name: Deploy to Azure Container Apps
 
+# ── Trigger ──
+# Deploys on push to main or manual dispatch.
 on:
   push:
     branches: [main]
   workflow_dispatch:
+
+# ── Prerequisites (one-time Azure CLI setup) ──
+# 1. Create resource group:        az group create --name muthur-rg --location eastus
+# 2. Create ACR:                   az acr create --name muthurterminal --resource-group muthur-rg --sku Basic --admin-enabled true
+# 3. Create Container Apps env:    az containerapp env create --name muthur-env --resource-group muthur-rg --location eastus
+# 4. Create Container App:         az containerapp create --name muthur-terminal --resource-group muthur-rg --environment muthur-env --image muthurterminal.azurecr.io/muthur-terminal:latest --target-port 3000 --ingress external
+# 5. Set GITHUB_TOKEN secret:      az containerapp secret set --name muthur-terminal --resource-group muthur-rg --secrets github-token=<YOUR_FINE_GRAINED_PAT>
+# 6. Create service principal:     az ad sp create-for-rbac --name "muthur-github-actions" --role contributor --scopes /subscriptions/<SUB_ID>/resourceGroups/muthur-rg --json-auth
+# 7. Add GitHub repo secrets:      AZURE_CREDENTIALS (step 6 output), ACR_USERNAME, ACR_PASSWORD (from az acr credential show)
 
 env:
   AZURE_CONTAINER_APP_NAME: muthur-terminal
@@ -31,10 +42,19 @@ jobs:
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build and push Docker image
-        run: |
-          docker build -t ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} .
-          docker push ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Deploy to Azure Container Apps
         uses: azure/container-apps-deploy-action@v2
