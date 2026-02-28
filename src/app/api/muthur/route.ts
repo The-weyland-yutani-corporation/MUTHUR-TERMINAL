@@ -1,9 +1,9 @@
 import { NextRequest } from "next/server";
 import { MUTHUR_SYSTEM_PROMPT } from "@/lib/system-prompt";
 
-let clientPromise: Promise<InstanceType<
-  typeof import("@github/copilot-sdk").CopilotClient
->> | null = null;
+let clientPromise: Promise<
+  InstanceType<typeof import("@github/copilot-sdk").CopilotClient>
+> | null = null;
 
 async function getClient() {
   if (!clientPromise) {
@@ -18,9 +18,9 @@ async function getClient() {
         opts.cliArgs = [process.env.CLI_PATH || "copilot"];
       }
 
-      // BYOK mode doesn't need GitHub auth
-      if (process.env.LLM_API_KEY && process.env.LLM_BASE_URL) {
-        opts.useLoggedInUser = false;
+      // Production: use GITHUB_TOKEN env var for headless auth
+      if (process.env.GITHUB_TOKEN) {
+        opts.githubToken = process.env.GITHUB_TOKEN;
       }
 
       const client = new CopilotClient(opts);
@@ -31,32 +31,18 @@ async function getClient() {
   return clientPromise;
 }
 
-function getProviderConfig() {
-  const apiKey = process.env.LLM_API_KEY;
-  const baseUrl = process.env.LLM_BASE_URL;
-  if (!apiKey || !baseUrl) return undefined;
-
-  return {
-    type: "openai" as const,
-    baseUrl,
-    apiKey,
-  };
-}
-
 export async function POST(request: NextRequest) {
   try {
     const { messages } = await request.json();
 
     const client = await getClient();
 
-    const provider = getProviderConfig();
     const session = await client.createSession({
       model: "claude-sonnet-4-5",
       streaming: true,
       systemMessage: {
         content: MUTHUR_SYSTEM_PROMPT,
       },
-      ...(provider && { provider }),
     });
 
     const lastMessage = messages[messages.length - 1];
@@ -104,7 +90,7 @@ export async function POST(request: NextRequest) {
       JSON.stringify({
         error: `MU/TH/UR 6000 — SYSTEM FAULT: ${errMsg}`,
       }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { status: 500, headers: { "Content-Type": "application/json" } },
     );
   }
 }

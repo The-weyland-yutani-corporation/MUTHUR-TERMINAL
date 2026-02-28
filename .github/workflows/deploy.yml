@@ -43,5 +43,4 @@ jobs:
           containerAppName: ${{ env.AZURE_CONTAINER_APP_NAME }}
           imageToDeploy: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
           environmentVariables: >-
-            LLM_BASE_URL=secretref:llm-base-url
-            LLM_API_KEY=secretref:llm-api-key
+            GITHUB_TOKEN=secretref:github-token
