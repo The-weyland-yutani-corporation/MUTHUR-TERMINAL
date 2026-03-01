@@ -62,6 +62,15 @@ The app is containerized and deployed to **Azure Container Apps**. See `.github/
 
 See `.env.example` for environment variable reference.
 
+### ⚠️ Serverless Runtimes Not Supported
+
+The `@github/copilot-sdk` **cannot run on serverless platforms** such as Vercel, AWS Lambda, or Cloudflare Workers. The SDK requires:
+
+- **Node.js 22+** for the built-in `node:sqlite` module
+- **A long-running subprocess** — the SDK spawns the Copilot CLI as a child process, which is incompatible with the ephemeral, stateless execution model of serverless functions
+
+Use a **container-based** or **VM-based** deployment (Docker, Azure Container Apps, AWS ECS/Fargate, Railway, Fly.io, etc.) where the Node.js process persists across requests.
+
 ## Future Roadmap
 
 - **GitHub OAuth** — Log in as crew members for extended sessions
