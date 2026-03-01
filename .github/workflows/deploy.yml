@@ -19,10 +19,7 @@ on:
 
 # ── Prerequisites (one-time Azure CLI setup, repeat per environment) ──
 #
-# 1. Create GitHub Environments: "staging" and "production"
-#    (Settings > Environments > New environment)
-#
-# 2. Per environment, create Azure resources:
+# 1. Create Azure resources per environment:
 #      az group create --name <RG_NAME> --location eastus
 #      az acr create --name <ACR_NAME> --resource-group <RG_NAME> --sku Basic --admin-enabled true
 #      az containerapp env create --name <ENV_NAME> --resource-group <RG_NAME> --location eastus
@@ -32,35 +29,37 @@ on:
 #      az containerapp secret set --name <APP_NAME> --resource-group <RG_NAME> \
 #        --secrets github-token=<YOUR_FINE_GRAINED_PAT>
 #
-# 3. Create Azure AD app + federated credentials (one per branch):
+# 2. Create Azure AD app + federated credentials (one per branch):
 #      az ad app create --display-name "muthur-github-actions"
 #      az ad sp create --id <APP_ID>
 #      az role assignment create --assignee <APP_ID> --role contributor \
 #        --scope /subscriptions/<SUB_ID>/resourceGroups/<RG_NAME>
-#      # Staging credential
+#      # Staging credential (branch-based subject)
 #      az ad app federated-credential create --id <APP_ID> --parameters \
 #        '{"name":"github-staging","issuer":"https://token.actions.githubusercontent.com",
-#          "subject":"repo:<OWNER>/MUTHUR-Terminal:environment:staging",
+#          "subject":"repo:<OWNER>/MUTHUR-TERMINAL:ref:refs/heads/staging",
 #          "audiences":["api://AzureADTokenExchange"]}'
-#      # Production credential
+#      # Production credential (branch-based subject)
 #      az ad app federated-credential create --id <APP_ID> --parameters \
 #        '{"name":"github-production","issuer":"https://token.actions.githubusercontent.com",
-#          "subject":"repo:<OWNER>/MUTHUR-Terminal:environment:production",
+#          "subject":"repo:<OWNER>/MUTHUR-TERMINAL:ref:refs/heads/main",
 #          "audiences":["api://AzureADTokenExchange"]}'
 #
-# 4. In EACH GitHub Environment, set these variables:
-#      AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID,
-#      AZURE_CONTAINER_APP_NAME, AZURE_RESOURCE_GROUP, AZURE_CONTAINER_REGISTRY
+# 3. Add GitHub repo variables (Settings > Variables > Repository variables):
+#      AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
 
 env:
   IMAGE_NAME: muthur-terminal
 
 jobs:
-  # ── Job 1: Determine target environment ──
+  # ── Job 1: Determine target environment and resolve resource names ──
   resolve-env:
     runs-on: ubuntu-latest
     outputs:
       environment: ${{ steps.set.outputs.environment }}
+      container_app_name: ${{ steps.set.outputs.container_app_name }}
+      resource_group: ${{ steps.set.outputs.resource_group }}
+      container_registry: ${{ steps.set.outputs.container_registry }}
     steps:
       - name: Resolve environment from trigger
         id: set
@@ -77,11 +76,20 @@ jobs:
           fi
           echo "environment=$ENV" >> "$GITHUB_OUTPUT"
 
+          if [ "$ENV" = "production" ]; then
+            echo "container_app_name=muthur-terminal" >> "$GITHUB_OUTPUT"
+            echo "resource_group=muthur-rg" >> "$GITHUB_OUTPUT"
+            echo "container_registry=muthurterminal" >> "$GITHUB_OUTPUT"
+          else
+            echo "container_app_name=muthur-terminal-staging" >> "$GITHUB_OUTPUT"
+            echo "resource_group=muthur-rg-staging" >> "$GITHUB_OUTPUT"
+            echo "container_registry=muthurterminal" >> "$GITHUB_OUTPUT"
+          fi
+
   # ── Job 2: Build & Deploy ──
   build-and-deploy:
     needs: resolve-env
     runs-on: ubuntu-latest
-    environment: ${{ needs.resolve-env.outputs.environment }}
     permissions:
       id-token: write
       contents: read
@@ -98,7 +106,7 @@ jobs:
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
       - name: Log in to Azure Container Registry
-        run: az acr login --name ${{ vars.AZURE_CONTAINER_REGISTRY }}
+        run: az acr login --name ${{ needs.resolve-env.outputs.container_registry }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -109,16 +117,16 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ vars.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
-            ${{ vars.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
+            ${{ needs.resolve-env.outputs.container_registry }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ needs.resolve-env.outputs.container_registry }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Deploy to Azure Container Apps
         uses: azure/container-apps-deploy-action@v2
         with:
-          resourceGroup: ${{ vars.AZURE_RESOURCE_GROUP }}
-          containerAppName: ${{ vars.AZURE_CONTAINER_APP_NAME }}
-          imageToDeploy: ${{ vars.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          resourceGroup: ${{ needs.resolve-env.outputs.resource_group }}
+          containerAppName: ${{ needs.resolve-env.outputs.container_app_name }}
+          imageToDeploy: ${{ needs.resolve-env.outputs.container_registry }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
           environmentVariables: >-
             GITHUB_TOKEN=secretref:github-token
