@@ -6,7 +6,7 @@ name: Deploy to Azure Container Apps
 # Manual:     workflow_dispatch with environment selector
 on:
   push:
-    branches: [main, staging]
+    branches: [main, staging, copilot/fix-github-actions-workflow-yet-again]
   workflow_dispatch:
     inputs:
       environment:
@@ -70,6 +70,8 @@ jobs:
           elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
             ENV="production"
           elif [ "${{ github.ref }}" = "refs/heads/staging" ]; then
+            ENV="staging"
+          elif [ "${{ github.ref }}" = "refs/heads/copilot/fix-github-actions-workflow-yet-again" ]; then
             ENV="staging"
           else
             echo "::error::Unsupported branch for deployment"
