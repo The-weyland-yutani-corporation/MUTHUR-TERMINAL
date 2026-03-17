@@ -1,6 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, KeyboardEvent } from "react";
+import {
+  SLASH_COMMANDS,
+  matchCommands,
+  formatHelpText,
+  type SlashCommand,
+} from "@/lib/slash-commands";
 
 interface Message {
   role: "user" | "assistant" | "system";
@@ -12,7 +18,7 @@ export function Terminal() {
     {
       role: "system",
       content:
-        "> MU/TH/UR 6000 ONLINE\n> INTERFACE 2037 READY FOR INQUIRY\n> ENTER QUERY BELOW",
+        "> MU/TH/UR 6000 ONLINE\n> INTERFACE 2037 READY FOR INQUIRY\n> ENTER QUERY BELOW\n> TYPE /help FOR AVAILABLE COMMANDS",
     },
   ]);
   const [input, setInput] = useState("");
@@ -20,6 +26,8 @@ export function Terminal() {
   const [streamingContent, setStreamingContent] = useState("");
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [suggestions, setSuggestions] = useState<SlashCommand[]>([]);
+  const [selectedSuggestion, setSelectedSuggestion] = useState(0);
 
   const outputRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -36,16 +44,77 @@ export function Terminal() {
     inputRef.current?.focus();
   }, [isProcessing]);
 
+  // Update suggestions as user types
+  useEffect(() => {
+    if (input.startsWith("/") && !isProcessing) {
+      const matches = matchCommands(input);
+      setSuggestions(matches);
+      setSelectedSuggestion(0);
+    } else {
+      setSuggestions([]);
+    }
+  }, [input, isProcessing]);
+
+  const executeCommand = useCallback(
+    (commandText: string) => {
+      const matched = SLASH_COMMANDS.find(
+        (cmd) => cmd.name === commandText.toLowerCase()
+      );
+
+      if (matched?.clientAction === "clear") {
+        setMessages([
+          {
+            role: "system",
+            content: "> TERMINAL CLEARED\n> MU/TH/UR 6000 READY\n> TYPE /help FOR AVAILABLE COMMANDS",
+          },
+        ]);
+        setCommandHistory((prev) => [...prev, commandText]);
+        setHistoryIndex(-1);
+        setInput("");
+        setSuggestions([]);
+        return true;
+      }
+
+      if (matched?.clientAction === "help") {
+        setMessages((prev) => [
+          ...prev,
+          { role: "user", content: commandText },
+          { role: "system", content: formatHelpText() },
+        ]);
+        setCommandHistory((prev) => [...prev, commandText]);
+        setHistoryIndex(-1);
+        setInput("");
+        setSuggestions([]);
+        return true;
+      }
+
+      return false;
+    },
+    []
+  );
+
   const handleSubmit = useCallback(async () => {
     const trimmed = input.trim();
     if (!trimmed || isProcessing) return;
+
+    setSuggestions([]);
+
+    // Handle client-side slash commands
+    if (executeCommand(trimmed)) return;
+
+    // Resolve slash command to its prompt expansion
+    const matched = SLASH_COMMANDS.find(
+      (cmd) => cmd.name === trimmed.toLowerCase()
+    );
+    const queryText = matched?.prompt ?? trimmed;
+    const displayText = matched ? `${trimmed}` : trimmed;
 
     // Add to history
     setCommandHistory((prev) => [...prev, trimmed]);
     setHistoryIndex(-1);
 
-    // Add user message
-    const userMessage: Message = { role: "user", content: trimmed };
+    // Add user message (show the slash command, not the expanded prompt)
+    const userMessage: Message = { role: "user", content: displayText };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsProcessing(true);
@@ -56,7 +125,10 @@ export function Terminal() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: [...messages.filter((m) => m.role !== "system"), userMessage],
+          messages: [
+            ...messages.filter((m) => m.role !== "system"),
+            { role: "user", content: queryText },
+          ],
         }),
       });
 
@@ -121,9 +193,40 @@ export function Terminal() {
       setIsProcessing(false);
       setStreamingContent("");
     }
-  }, [input, isProcessing, messages]);
+  }, [input, isProcessing, messages, executeCommand]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    // Autocomplete navigation
+    if (suggestions.length > 0) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedSuggestion((prev) =>
+          prev < suggestions.length - 1 ? prev + 1 : 0
+        );
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedSuggestion((prev) =>
+          prev > 0 ? prev - 1 : suggestions.length - 1
+        );
+        return;
+      }
+      if (e.key === "Tab" || (e.key === "Enter" && input !== suggestions[selectedSuggestion]?.name)) {
+        e.preventDefault();
+        const cmd = suggestions[selectedSuggestion];
+        if (cmd) {
+          setInput(cmd.name);
+          setSuggestions([]);
+        }
+        return;
+      }
+      if (e.key === "Escape") {
+        setSuggestions([]);
+        return;
+      }
+    }
+
     if (e.key === "Enter") {
       handleSubmit();
     } else if (e.key === "ArrowUp") {
@@ -213,7 +316,34 @@ export function Terminal() {
       </div>
 
       {/* Input area */}
-      <div className="border-t border-[#1a4d1a] px-4 py-3">
+      <div className="relative border-t border-[#1a4d1a] px-4 py-3">
+        {/* Autocomplete dropdown */}
+        {suggestions.length > 0 && (
+          <div className="absolute bottom-full left-0 right-0 border border-[#1a4d1a] bg-black/95 px-1 py-1 font-[family-name:var(--font-terminal)]">
+            {suggestions.map((cmd, i) => (
+              <div
+                key={cmd.name}
+                className={`flex items-center gap-3 px-3 py-1 text-sm cursor-pointer ${
+                  i === selectedSuggestion
+                    ? "bg-[#1a4d1a]/40 text-[#66ff66]"
+                    : "text-[#33ff33]"
+                }`}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  setInput(cmd.name);
+                  setSuggestions([]);
+                  inputRef.current?.focus();
+                }}
+                onMouseEnter={() => setSelectedSuggestion(i)}
+              >
+                <span className="font-bold shrink-0">{cmd.name}</span>
+                <span className="phosphor-text-dim text-xs truncate">
+                  {cmd.description}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
         <div className="flex items-center gap-2">
           <span className="phosphor-text text-base shrink-0">&gt;_</span>
           <input
