@@ -1,0 +1,86 @@
+name: 🐛 Bug Report
+description: Report a bug or unexpected behavior with the MUTHUR Terminal
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please fill out the information below to help us investigate.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of the bug.
+      placeholder: Describe what went wrong...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this issue?
+      placeholder: |
+        1. Go to '...'
+        2. Type '...'
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected Area
+      description: Which part of the application is affected?
+      options:
+        - Boot Sequence
+        - Terminal / Chat Interface
+        - AI Responses (MUTHUR persona)
+        - CRT Visual Effects
+        - API / Backend
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser
+      description: Which browser are you using?
+      placeholder: e.g. Chrome 120, Firefox 121, Safari 17
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      description: Which OS are you on?
+      placeholder: e.g. Windows 11, macOS Sonoma, Ubuntu 22.04
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: If applicable, add screenshots to help explain the issue.
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other information that might be relevant.

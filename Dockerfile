@@ -32,6 +32,10 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Symlink the globally-installed @github/copilot into the app's node_modules
+# so the SDK can resolve it (standalone output has isolated node_modules)
+RUN ln -s /usr/local/lib/node_modules/@github/copilot ./node_modules/@github/copilot
+
 USER nextjs
 EXPOSE 3000
 

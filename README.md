@@ -52,15 +52,68 @@ src/
     └── system-prompt.ts        # MUTHUR 6000 AI personality & lore
 ```
 
+## Live URL
+
+**Staging:** [https://muthur-terminal.delightfulplant-4f7a6df5.eastus.azurecontainerapps.io](https://muthur-terminal.delightfulplant-4f7a6df5.eastus.azurecontainerapps.io)
+
 ## Deployment
 
-The app is containerized and deployed to **Azure Container Apps**. See `.github/workflows/deploy.yml` for the full CI/CD pipeline.
+The app is containerized and deployed to **Azure Container Apps** (not Azure App Service — see [Why Container Apps?](#why-container-apps) below).
 
 - **Docker** — Multi-stage build (`node:24-alpine`), standalone Next.js output
 - **Azure auth** — OIDC federated credentials (no long-lived secrets)
-- **ACR** — Images pushed to Azure Container Registry, deployed on push to `main`
+- **ACR** — Images pushed to Azure Container Registry
+- **Environments** — `staging` (push to `staging` branch) and `production` (push to `main`)
 
-See `.env.example` for environment variable reference.
+### CI/CD (GitHub Actions)
+
+Push to `main` or `staging` triggers `.github/workflows/deploy_to_azure_container_apps.yml` automatically.
+
+The pipeline:
+1. Resolves the target environment from the branch (`main` → production, `staging` → staging)
+2. Logs in to Azure via OIDC (federated credentials, no stored secrets)
+3. Logs in to Azure Container Registry
+4. Builds and pushes the Docker image (tagged with commit SHA + `latest`)
+5. Deploys to Azure Container Apps with the `GITHUB_TOKEN` secret for Copilot SDK auth
+
+Manual dispatch is also available via the Actions tab with an environment selector.
+
+### Why Container Apps?
+
+The `@github/copilot-sdk` requires **Node.js 22+** (for the built-in `node:sqlite` module) and spawns a **long-running Copilot CLI subprocess**. These requirements are incompatible with serverless platforms like Vercel, Azure Functions, or AWS Lambda, which have short-lived execution environments. Azure Container Apps runs the app inside a persistent Docker container where the SDK works correctly.
+
+### Manual deployment
+
+A local deploy script mirrors the CI/CD pipeline. Requires [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) and [Docker](https://docs.docker.com/get-docker/).
+
+1. **Log in to Azure:**
+   ```bash
+   az login
+   ```
+
+2. **Add deploy variables to `.env`** (see `.env.example`):
+   ```bash
+   AZURE_RESOURCE_GROUP=your-resource-group
+   AZURE_CONTAINER_REGISTRY=your-acr-name
+   AZURE_CONTAINER_APP_NAME=your-app-name
+   ```
+
+3. **Run the script:**
+   ```bash
+   ./scripts/deploy.sh              # staging (default)
+   ./scripts/deploy.sh production   # production
+   ```
+
+The script sources `.env` from the project root, builds the Docker image tagged with the current commit SHA, pushes it to ACR, and updates the Container App.
+
+### ⚠️ Serverless Runtimes Not Supported
+
+The `@github/copilot-sdk` **cannot run on serverless platforms** such as Vercel, AWS Lambda, or Cloudflare Workers. The SDK requires:
+
+- **Node.js 22+** for the built-in `node:sqlite` module
+- **A long-running subprocess** — the SDK spawns the Copilot CLI as a child process, which is incompatible with the ephemeral, stateless execution model of serverless functions
+
+Use a **container-based** or **VM-based** deployment (Docker, Azure Container Apps, AWS ECS/Fargate, Railway, Fly.io, etc.) where the Node.js process persists across requests.
 
 ## Future Roadmap
 
