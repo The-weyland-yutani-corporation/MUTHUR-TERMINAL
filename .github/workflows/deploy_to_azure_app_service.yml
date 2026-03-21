@@ -1,0 +1,109 @@
+name: Deploy to Azure App Service
+
+# ── Trigger ──
+# Deploys on push to main or manual dispatch.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# ── Prerequisites (one-time Azure CLI setup) ──
+#
+# 1. Create resource group (or reuse existing):
+#      az group create --name muthur-rg --location eastus
+#
+# 2. Create App Service Plan (Linux):
+#      az appservice plan create \
+#        --name muthur-app-plan \
+#        --resource-group muthur-rg \
+#        --is-linux \
+#        --sku B1
+#
+# 3. Create Web App (Node.js 22 LTS):
+#      az webapp create \
+#        --name muthur-terminal-app \
+#        --resource-group muthur-rg \
+#        --plan muthur-app-plan \
+#        --runtime "NODE:22-lts"
+#
+# 4. Configure startup command:
+#      az webapp config set \
+#        --name muthur-terminal-app \
+#        --resource-group muthur-rg \
+#        --startup-file "node server.js"
+#
+# 5. Set required app settings:
+#      az webapp config appsettings set \
+#        --name muthur-terminal-app \
+#        --resource-group muthur-rg \
+#        --settings \
+#          GITHUB_TOKEN=<YOUR_FINE_GRAINED_PAT> \
+#          WEBSITE_NODE_DEFAULT_VERSION=~22 \
+#          SCM_DO_BUILD_DURING_DEPLOYMENT=false
+#
+# 6. Create/reuse Azure AD app + federated credential for OIDC:
+#      (If you already have an app from the Container Apps workflow, reuse it)
+#      az ad app create --display-name "muthur-github-actions"
+#      az ad sp create --id <APP_ID>
+#      az role assignment create --assignee <APP_ID> --role contributor \
+#        --scope /subscriptions/<SUB_ID>/resourceGroups/muthur-rg
+#      az ad app federated-credential create --id <APP_ID> --parameters \
+#        '{"name":"github-appservice","issuer":"https://token.actions.githubusercontent.com",
+#          "subject":"repo:<OWNER>/MUTHUR-Terminal:ref:refs/heads/main",
+#          "audiences":["api://AzureADTokenExchange"]}'
+#
+# 7. Add/verify GitHub repo variables (Settings > Variables):
+#      AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
+#      (These can be shared with the Container Apps workflow)
+
+env:
+  AZURE_WEBAPP_NAME: muthur-terminal-app
+  AZURE_RESOURCE_GROUP: muthur-rg
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js app
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+
+      - name: Assemble deployment package
+        run: |
+          # Copy static assets into the standalone output directory
+          cp -r .next/static .next/standalone/.next/static
+          cp -r public .next/standalone/public
+
+          # Install @github/copilot (CLI) into standalone node_modules
+          # The Copilot SDK resolves this package at runtime
+          cp -r node_modules/@github/copilot .next/standalone/node_modules/@github/copilot
+
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          package: .next/standalone
