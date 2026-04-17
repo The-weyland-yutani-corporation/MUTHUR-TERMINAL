@@ -7,6 +7,8 @@ import {
   formatHelpText,
   type SlashCommand,
 } from "@/lib/slash-commands";
+import { AuthButton } from "./AuthButton";
+import { ConversationPicker } from "./ConversationPicker";
 
 interface Message {
   role: "user" | "assistant" | "system";
@@ -28,9 +30,60 @@ export function Terminal() {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [suggestions, setSuggestions] = useState<SlashCommand[]>([]);
   const [selectedSuggestion, setSelectedSuggestion] = useState(0);
+  const [currentConversationId, setCurrentConversationId] = useState<
+    string | null
+  >(null);
 
   const outputRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Load conversation history when conversation is selected
+  const loadConversation = useCallback(async (conversationId: string) => {
+    try {
+      const res = await fetch(`/api/conversations/${conversationId}`);
+      if (res.ok) {
+        const data = await res.json();
+        const loadedMessages = data.messages.map(
+          (msg: { role: string; content: string }) => ({
+            role: msg.role,
+            content: msg.content,
+          })
+        );
+
+        setMessages([
+          {
+            role: "system",
+            content:
+              "> SESSION RESTORED\n> MU/TH/UR 6000 READY\n> TYPE /help FOR AVAILABLE COMMANDS",
+          },
+          ...loadedMessages,
+        ]);
+        setCurrentConversationId(conversationId);
+      }
+    } catch (error) {
+      console.error("Failed to load conversation:", error);
+    }
+  }, []);
+
+  // Handle conversation selection
+  const handleConversationSelect = useCallback(
+    (conversationId: string | null) => {
+      if (conversationId) {
+        loadConversation(conversationId);
+      } else {
+        // New conversation
+        setMessages([
+          {
+            role: "system",
+            content:
+              "> NEW SESSION\n> MU/TH/UR 6000 READY\n> TYPE /help FOR AVAILABLE COMMANDS",
+          },
+        ]);
+        setCurrentConversationId(null);
+      }
+    },
+    [loadConversation]
+  );
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -46,13 +99,17 @@ export function Terminal() {
 
   // Update suggestions as user types
   useEffect(() => {
-    if (input.startsWith("/") && !isProcessing) {
-      const matches = matchCommands(input);
-      setSuggestions(matches);
-      setSelectedSuggestion(0);
-    } else {
-      setSuggestions([]);
-    }
+    const updateSuggestions = () => {
+      if (input.startsWith("/") && !isProcessing) {
+        const matches = matchCommands(input);
+        setSuggestions(matches);
+        setSelectedSuggestion(0);
+      } else {
+        setSuggestions([]);
+      }
+    };
+
+    updateSuggestions();
   }, [input, isProcessing]);
 
   const executeCommand = useCallback(
@@ -129,6 +186,7 @@ export function Terminal() {
             ...messages.filter((m) => m.role !== "system"),
             { role: "user", content: queryText },
           ],
+          conversationId: currentConversationId,
         }),
       });
 
@@ -193,7 +251,7 @@ export function Terminal() {
       setIsProcessing(false);
       setStreamingContent("");
     }
-  }, [input, isProcessing, messages, executeCommand]);
+  }, [input, isProcessing, messages, executeCommand, currentConversationId]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     // Autocomplete navigation
@@ -264,9 +322,16 @@ export function Terminal() {
         <span className="phosphor-text-dim text-xs tracking-[0.2em]">
           USCSS NOSTROMO — MU/TH/UR 6000 TERMINAL
         </span>
-        <span className="phosphor-text-dim text-xs">
-          {isProcessing ? "● PROCESSING" : "● READY"}
-        </span>
+        <div className="flex items-center gap-4">
+          <ConversationPicker
+            onSelectConversation={handleConversationSelect}
+            currentConversationId={currentConversationId}
+          />
+          <AuthButton />
+          <span className="phosphor-text-dim text-xs">
+            {isProcessing ? "● PROCESSING" : "● READY"}
+          </span>
+        </div>
       </div>
 
       {/* Output area */}

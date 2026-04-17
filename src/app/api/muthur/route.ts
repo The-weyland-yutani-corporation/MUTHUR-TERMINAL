@@ -1,5 +1,12 @@
 import { NextRequest } from "next/server";
 import { MUTHUR_SYSTEM_PROMPT } from "@/lib/system-prompt";
+import { auth } from "@/lib/auth";
+import { isDatabaseConfigured } from "@/db";
+import {
+  getActiveConversation,
+  createConversation,
+  createMessage,
+} from "@/db/queries";
 
 let clientPromise: Promise<
   InstanceType<typeof import("@github/copilot-sdk").CopilotClient>
@@ -33,11 +40,31 @@ async function getClient() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { messages } = await request.json();
+    const { messages, conversationId } = await request.json();
+
+    // Check authentication status
+    const authSession = await auth();
+    const isAuthenticated = !!authSession?.user?.id;
+    const dbConfigured = isDatabaseConfigured();
+
+    // Get or create conversation if authenticated
+    let activeConversationId = conversationId;
+
+    if (isAuthenticated && dbConfigured) {
+      let conversation = activeConversationId
+        ? null
+        : await getActiveConversation(authSession.user.id);
+
+      if (!conversation && !activeConversationId) {
+        conversation = await createConversation(authSession.user.id);
+      }
+
+      activeConversationId = conversation?.id || conversationId;
+    }
 
     const client = await getClient();
 
-    const session = await client.createSession({
+    const copilotSession = await client.createSession({
       model: "claude-sonnet-4-5",
       streaming: true,
       systemMessage: {
@@ -48,17 +75,34 @@ export async function POST(request: NextRequest) {
     const lastMessage = messages[messages.length - 1];
     const prompt = lastMessage?.content || "";
 
+    // Persist user message if authenticated
+    if (isAuthenticated && dbConfigured && activeConversationId) {
+      await createMessage(activeConversationId, "user", prompt);
+    }
+
     const stream = new ReadableStream({
       async start(controller) {
         const encoder = new TextEncoder();
+        let fullAssistantResponse = "";
 
         try {
-          session.on("assistant.message_delta", (event) => {
-            const data = JSON.stringify({ content: event.data.deltaContent });
+          copilotSession.on("assistant.message_delta", (event) => {
+            const deltaContent = event.data.deltaContent;
+            fullAssistantResponse += deltaContent;
+            const data = JSON.stringify({ content: deltaContent });
             controller.enqueue(encoder.encode(`data: ${data}\n\n`));
           });
 
-          await session.sendAndWait({ prompt });
+          await copilotSession.sendAndWait({ prompt });
+
+          // Persist assistant message if authenticated
+          if (isAuthenticated && dbConfigured && activeConversationId && fullAssistantResponse) {
+            await createMessage(
+              activeConversationId,
+              "assistant",
+              fullAssistantResponse
+            );
+          }
 
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();
@@ -71,7 +115,7 @@ export async function POST(request: NextRequest) {
           controller.enqueue(encoder.encode(`data: ${data}\n\n`));
           controller.close();
         } finally {
-          await session.destroy().catch(() => {});
+          await copilotSession.destroy().catch(() => {});
         }
       },
     });
