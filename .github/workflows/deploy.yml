@@ -29,10 +29,25 @@ on:
 #      az containerapp create --name <APP_NAME> --resource-group <RG_NAME> \
 #        --environment <ENV_NAME> --image <ACR_NAME>.azurecr.io/muthur-terminal:latest \
 #        --target-port 3000 --ingress external
-#      az containerapp secret set --name <APP_NAME> --resource-group <RG_NAME> \
-#        --secrets github-token=<YOUR_FINE_GRAINED_PAT>
 #
-# 3. Create Azure AD app + federated credentials (one per branch):
+# 3. Create Azure PostgreSQL Flexible Server (for conversation persistence):
+#      az postgres flexible-server create --name <DB_NAME> --resource-group <RG_NAME> \
+#        --location eastus --admin-user <ADMIN_USER> --admin-password <ADMIN_PASSWORD> \
+#        --sku-name Standard_B1ms --tier Burstable --storage-size 32 \
+#        --version 14 --public-access all
+#      az postgres flexible-server db create --resource-group <RG_NAME> \
+#        --server-name <DB_NAME> --database-name muthur
+#
+# 4. Set Container App secrets (run for each environment):
+#      az containerapp secret set --name <APP_NAME> --resource-group <RG_NAME> \
+#        --secrets \
+#          github-token=<YOUR_FINE_GRAINED_PAT> \
+#          database-url=<POSTGRESQL_CONNECTION_STRING> \
+#          nextauth-secret=<RANDOM_SECRET_openssl_rand_base64_32> \
+#          github-client-id=<GITHUB_OAUTH_CLIENT_ID> \
+#          github-client-secret=<GITHUB_OAUTH_CLIENT_SECRET>
+#
+# 5. Create Azure AD app + federated credentials (one per branch):
 #      az ad app create --display-name "muthur-github-actions"
 #      az ad sp create --id <APP_ID>
 #      az role assignment create --assignee <APP_ID> --role contributor \
@@ -48,9 +63,15 @@ on:
 #          "subject":"repo:<OWNER>/MUTHUR-Terminal:environment:production",
 #          "audiences":["api://AzureADTokenExchange"]}'
 #
-# 4. In EACH GitHub Environment, set these variables:
+# 6. In EACH GitHub Environment, set these variables:
 #      AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID,
-#      AZURE_CONTAINER_APP_NAME, AZURE_RESOURCE_GROUP, AZURE_CONTAINER_REGISTRY
+#      AZURE_CONTAINER_APP_NAME, AZURE_RESOURCE_GROUP, AZURE_CONTAINER_REGISTRY,
+#      NEXTAUTH_URL (e.g., https://muthur-terminal.azurecontainerapps.io)
+#
+# 7. Create GitHub OAuth App (for user authentication):
+#      Go to: https://github.com/settings/developers
+#      Create new OAuth App with callback URL: <NEXTAUTH_URL>/api/auth/callback/github
+#      Use the Client ID and Client Secret in step 4 above
 
 env:
   IMAGE_NAME: muthur-terminal
@@ -122,3 +143,8 @@ jobs:
           imageToDeploy: ${{ vars.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
           environmentVariables: >-
             GITHUB_TOKEN=secretref:github-token
+            DATABASE_URL=secretref:database-url
+            NEXTAUTH_SECRET=secretref:nextauth-secret
+            GITHUB_CLIENT_ID=secretref:github-client-id
+            GITHUB_CLIENT_SECRET=secretref:github-client-secret
+            NEXTAUTH_URL=${{ vars.NEXTAUTH_URL }}

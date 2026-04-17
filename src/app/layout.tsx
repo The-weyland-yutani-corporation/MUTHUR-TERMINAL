@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { VT323 } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/components/AuthProvider";
 
 const vt323 = VT323({
   weight: "400",
@@ -21,7 +22,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${vt323.variable} antialiased`}>{children}</body>
+      <body className={`${vt323.variable} antialiased`}>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }
