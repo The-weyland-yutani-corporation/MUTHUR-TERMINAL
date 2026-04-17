@@ -59,6 +59,7 @@ jobs:
   # ── Job 1: Determine target environment ──
   resolve-env:
     runs-on: ubuntu-latest
+    permissions: {}
     outputs:
       environment: ${{ steps.set.outputs.environment }}
     steps:
