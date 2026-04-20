@@ -9,7 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@github/copilot-sdk": "^0.1.26",
+    "@github/copilot-sdk": "^0.1.32",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.575.0",
