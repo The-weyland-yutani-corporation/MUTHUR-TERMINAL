@@ -3,9 +3,9 @@
 ## Build & Run
 
 ```bash
-npm run dev          # Start dev server (localhost:3000)
-npm run build        # Production build (output: standalone)
-npm run lint         # ESLint (flat config, Next.js core-web-vitals + typescript)
+pnpm dev          # Start dev server (localhost:3000)
+pnpm build        # Production build (output: standalone)
+pnpm lint         # ESLint (flat config, Next.js core-web-vitals + typescript)
 ```
 
 No test framework is configured.

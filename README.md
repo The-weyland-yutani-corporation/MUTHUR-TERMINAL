@@ -29,8 +29,8 @@ An interactive web terminal that faithfully recreates the MU/TH/UR 6000 mainfram
 ## Getting Started
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) — watch MUTHUR boot up, then start querying.
