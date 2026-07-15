@@ -212,7 +212,7 @@ export function Terminal() {
         );
         return;
       }
-      if (e.key === "Tab" || (e.key === "Enter" && input !== suggestions[selectedSuggestion]?.name)) {
+      if (e.key === "Tab") {
         e.preventDefault();
         const cmd = suggestions[selectedSuggestion];
         if (cmd) {
@@ -220,6 +220,15 @@ export function Terminal() {
           setSuggestions([]);
         }
         return;
+      } else if (e.key === "Enter") {
+        // Only autocomplete on Enter if the current input differs from the selected suggestion
+        const cmd = suggestions[selectedSuggestion];
+        if (cmd && input !== cmd.name) {
+          e.preventDefault();
+          setInput(cmd.name);
+          setSuggestions([]);
+          return;
+        }
       }
       if (e.key === "Escape") {
         setSuggestions([]);
