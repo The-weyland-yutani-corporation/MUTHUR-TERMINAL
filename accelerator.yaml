@@ -1,0 +1,86 @@
+# DRAFT: local metadata only. Catalog schema and submission requirements unverified.
+# Catalog repository API returned 404; this file is not a catalog acceptance claim.
+schema_status: unverified
+readiness: prototype_pending_verification
+id: muthur-terminal-streaming-ai-starter
+name: MUTHUR Terminal — Streaming AI Experience Starter
+repository: https://github.com/The-weyland-yutani-corporation/MUTHUR-TERMINAL
+catalog_target: https://github.com/mcaps-microsoft/accelerators-catalog
+summary: AI application development starter with streaming UI, bounded SDK integration and synthetic replay.
+customer_problem: Developers need reusable AI interaction patterns with explicit evidence and human-review boundaries.
+target_customer:
+  account: Reusable / cross-industry
+  primary:
+    - developers
+    - platform engineers
+  secondary:
+    - solution engineers
+    - cloud solution architects
+    - product owners
+target_industry: cross-industry
+target_readiness: catalog-ready
+audience:
+  - developers
+  - platform engineers
+  - solution engineers and CSAs
+  - product owners
+solution_area: AI application development
+technologies:
+  - Next.js 16.4.2
+  - React
+  - GitHub Copilot SDK 1.0.22
+  - GitHub Copilot CLI 1.0.98
+  - Azure Container Apps
+demo:
+  entry: /
+  selection_button: Synthetic support demo
+  actions:
+    - 1. Load synthetic request
+    - 2. Draft handoff
+    - 3. Copy for human review
+  default_mode: deterministic_offline_replay
+  durations_minutes: [5, 15]
+  guide: docs/demo.txt
+  scenario: Synthetic support coordinator handoff to duty engineer; not the target buyer.
+  synthetic_asset: SYN-PUMP-042
+  creates_tickets: false
+  tools_enabled: false
+media:
+  description: Five-minute edited, captioned screenshot walkthrough (silent; held frames).
+  continuous_recording: false
+  evidence_scope: Actual local synthetic replay UI captures and original architecture; no live model or cloud proof.
+  implementation_assets_provided: true
+  independent_review_complete: false
+  hero: docs/assets/hero.png
+  mobile: docs/assets/mobile.png
+  recording: docs/assets/demo.mp4
+  captions: docs/assets/demo.vtt
+  transcript: docs/assets/transcript.txt
+deployment:
+  supported_target: Azure Container Apps
+  guide: docs/deployment.txt
+  authenticated_model_verified: false
+  cloud_deployment_verified: false
+documentation:
+  overview: README.md
+  setup: docs/setup.txt
+  security: docs/security.txt
+  customization_support: docs/support.txt
+  readiness: docs/readiness.txt
+  architecture: docs/architecture.svg
+  architecture_source: docs/architecture.mmd
+ownership:
+  maintainer: TBD
+  security_contact: TBD
+  support: best_effort_no_sla
+rights:
+  license_status: requires_owner_and_legal_review
+  franchise_branding: external_use_requires_rights_review
+  external_distribution_approved: false
+external_blockers:
+  - owner and rights/branding approval
+  - independent reviewer handoff
+  - authenticated model verification
+  - private cloud deployment and rollback verification
+  - accessible video and captions review
+  - catalog schema and submission confirmation

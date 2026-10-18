@@ -1,0 +1,85 @@
+READINESS CHECKLIST — PROTOTYPE, NOT CATALOG-READY
+
+Readiness summary
+Repository: https://github.com/The-weyland-yutani-corporation/MUTHUR-TERMINAL
+MUTHUR Terminal — Streaming AI Experience Starter is a reusable, cross-industry
+AI application development starter, primarily for developers/platform engineers.
+The local fixed replay has implementation media evidence and is demo-ready for
+evaluation; independent media/content/accessibility review remains open.
+Field readiness and catalog readiness are not verified.
+Top three external fixes:
+1. Rights/branding clearance and named owner approval.
+2. Independent security review/remediation decision for 26 development findings.
+3. Independent authenticated live/cloud handoff and actual catalog-schema review.
+
+Use [ ] for open and [x] only after attaching dated evidence and reviewer identity.
+Documentation and deterministic replay do not establish production readiness.
+The catalog API https://api.github.com/repos/mcaps-microsoft/accelerators-catalog
+returned 404 during preparation. accelerator.yaml is a local metadata draft;
+catalog schema, eligibility, required fields and submission path are unverified.
+
+Local implementation evidence (2026-10-18, working tree; not external sign-off)
+npm run lint, npx tsc --noEmit --incremental false, npm run build, and six requested
+actual HTTP smoke checks passed after the final SDK 1.0.22 / CLI 1.0.98 / Next.js
+16.4.2 updates, including the final configuration (2026-10-18 18:06 UTC).
+docker build -t muthur-readiness . passed; container SDK import/RuntimeConnection
+and CLI --version checks passed. The final API explicitly resolves the locked
+@github/copilot/npm-loader.js through createRequire and forStdio transport, avoiding
+the SDK default runtime download/system CLI. After that adjustment, full local
+lint/TypeScript/build, Docker rebuild and all six HTTP smokes passed again.
+Container subprocess start/getStatus/stop passed with protocol 3 and
+useLoggedInUser:false; no authentication or model was invoked.
+Mocked lifecycle checks and the <=64 KiB output bound also passed; mocked checks
+are not evidence of successful authenticated inference.
+Actual browser replay, initially disabled review/copy gate, copy behavior, forced
+network failure and successful retry passed. Mobile at width 390 had no overflow;
+reduced-motion animation was none.
+Provided media: actual local hero/commands/journey/recovery/mobile PNG captures;
+demo.mp4 verified 300.000 seconds, approximately 1.21 MB; demo.vtt and transcript.txt.
+The video is a five-minute edited, captioned screenshot walkthrough (silent; held
+frames), not a continuous recording, and uses only synthetic replay/original
+architecture. It is not authenticated AI/cloud proof.
+System font builds need no remote font fetch. Runtime audit is zero; development
+audit residuals are listed below and in security.txt. None of this establishes
+authenticated model access, cloud deployment, or independent owner acceptance.
+
+Repository evidence
+[ ] Independent reviewer runs npm ci, lint and build at the handoff commit.
+[ ] Independent reviewer completes setup.txt browser and API acceptance checks.
+[x] Implementation replay screenshots and five-minute edited, captioned screenshot
+    walkthrough (silent; held frames), captions and transcript are provided under
+    docs/assets. These represent local synthetic replay, not live/cloud proof.
+[ ] Independent reviewer checks media for credential redaction, accuracy,
+    accessibility, captions/transcript and working links.
+[ ] Independent handoff: fresh clone, no author help, five-minute journey repeated;
+    record reviewer, date, commit, failures and recovery in the review record.
+
+External blockers — do not self-certify
+[ ] Repository owner named and approves external publication and support scope.
+[ ] Licensing/rights review determines permitted code redistribution; do not
+    assume a license exists or invent permission.
+[ ] Franchise branding/content rights reviewed across the repository; neutral
+    demo alone is not clearance. Approve external naming, assets and screenshots.
+[ ] Security/privacy reviewer approves synthetic-only scope, private gateway,
+    credential handling, dependency status, limits, telemetry and retention.
+    Runtime audit currently reports zero findings after exact dependency pins;
+    full development audit retains 26 findings (2 low, 3 moderate, 20 high,
+    1 critical). See security.txt for the development proxy-addr/shadcn MCP tree
+    and other residuals. Review exposure and remediation explicitly; no overall
+    clean-audit claim or blanket clearance is made.
+[ ] Eligible Copilot credentials and selected model verified with authenticated
+    live response; record model/date and rejection/failure behavior securely.
+[ ] Azure Container Apps deployed from immutable image tag; private access,
+    production bearer, managed-identity ACR pull, streaming, rollback and cleanup
+    validated. Record environment and reviewer without secrets.
+[ ] Business/domain reviewer approves SYN-RUNBOOK-01 boundaries, unknowns, duty
+    engineer ownership and human approval; no operational/customer claim implied.
+[ ] Named support/security/deployment owners accept handoff; no SLA unless agreed.
+[ ] Catalog owner confirms actual schema, metadata, license expectations,
+    media/accessibility requirements and submission process; validate draft anew.
+
+Exit criteria
+Publish evaluation evidence with commit/revision, reviewer and date. Keep failed
+or unavailable checks open. An authorized owner makes the final go/no-go decision.
+No real customer data, public deployment, catalog submission or production pilot
+until the applicable external blockers close.

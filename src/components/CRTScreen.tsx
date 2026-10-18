@@ -4,9 +4,10 @@ import { ReactNode } from "react";
 
 interface CRTScreenProps {
   children: ReactNode;
+  neutral?: boolean;
 }
 
-export function CRTScreen({ children }: CRTScreenProps) {
+export function CRTScreen({ children, neutral = false }: CRTScreenProps) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#020502] p-4">
       {/* CRT Monitor Frame */}
@@ -16,7 +17,7 @@ export function CRTScreen({ children }: CRTScreenProps) {
           {/* Inner screen area with CRT effects */}
           <div className="crt-screen rounded-lg bg-[#050a05] overflow-hidden">
             {/* Screen content */}
-            <div className="relative z-0 min-h-[70vh] max-h-[85vh] flex flex-col">
+            <div className="relative z-0 h-[85vh] min-h-[32rem] flex flex-col">
               {children}
             </div>
           </div>
@@ -25,13 +26,13 @@ export function CRTScreen({ children }: CRTScreenProps) {
         {/* Monitor base label */}
         <div className="mt-3 flex items-center justify-between px-4">
           <span className="phosphor-text-dim text-xs tracking-[0.3em] uppercase">
-            Weyland-Yutani Corp.
+            {neutral ? "Streaming AI Starter" : "Weyland-Yutani Corp."}
           </span>
           <span className="phosphor-text-dim text-xs tracking-[0.2em]">
-            MU/TH/UR 6000
+            {neutral ? "Synthetic data only" : "MU/TH/UR 6000"}
           </span>
           <span className="phosphor-text-dim text-xs tracking-[0.3em] uppercase">
-            Interface 2037
+            {neutral ? "Human review required" : "Interface 2037"}
           </span>
         </div>
       </div>

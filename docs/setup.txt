@@ -1,0 +1,96 @@
+LOCAL SETUP AND ACCEPTANCE
+
+Prerequisites
+- Node.js 22.12+ (24 recommended), npm, git; Docker only for the container route.
+- Network access for dependency installation. System Courier/monospace replaces
+  the remote Google font; building installed dependencies needs no font fetch.
+- Replay needs no model credentials. npm ci installs the pinned direct CLI
+  dependency; live mode needs CLI authentication, eligible Copilot access and
+  selected-model availability. No global CLI installation is required.
+- No new scripts or test framework are required.
+
+From repository root
+  npm ci
+  npm run dev
+Open http://localhost:3000 and select "Synthetic support demo" in the browser.
+There is no query-string experience selector.
+Leave offline replay checked for a credential-free synthetic walkthrough.
+The root URL retains the original fiction experience.
+
+Configuration (server environment, never commit values)
+GITHUB_TOKEN: optional locally when Copilot CLI login is used; runtime live auth
+  in headless deployment. Use an approved token with Copilot Requests permission
+  and confirm organizational policy/entitlement. The Actions GITHUB_TOKEN is not
+  automatically a valid Copilot runtime credential.
+COPILOT_MODEL: optional; default claude-sonnet-4-5. Verify access before live demo.
+DEMO_ACCESS_TOKEN: minimum 32 characters, mandatory in NODE_ENV=production.
+  Use a cryptographically random secret; enter it in the browser password field.
+  The browser does not persist it.
+  This demo bearer is separate from GITHUB_TOKEN and is not enterprise identity.
+NODE_PATH / CLI_PATH: optional legacy overrides for the SDK's Node/CLI launch
+  paths. Prefer running Node 24 rather than relying on an older default runtime.
+
+For local live mode after npm ci, run npx --no-install copilot auth login,
+restart the app if configuration
+changed, then uncheck replay in support mode. Do not claim live access until a
+real authenticated response succeeds. Replay is support-only; fiction is live.
+
+Validation
+  npm run lint
+  npm run build
+No test framework is configured. .github/workflows/validate.yml runs PR lint/build
+and provides a reusable deployment gate; passing it does not verify live/cloud.
+Exact pins: SDK 1.0.22, CLI 1.0.98 and Next.js 16.4.2. The CLI pin matches the SDK's
+declared copilotCliVersion and was advisory-checked.
+Runtime npm audit --omit=dev reports zero findings; full development audit has
+26 residual findings pending review. This is not an overall clean audit claim.
+
+Manual browser acceptance
+1. Root URL still boots into fiction; "Synthetic support demo" opens neutral UI.
+2. Support visibly labels its mode; offline checkbox defaults true.
+3. /help shows available commands; /clear clears visible messages.
+4. Run demo.txt's prompt twice: replay must be deterministic and visibly offline.
+   Also use "1. Load synthetic request", press Enter to submit, then
+   "2. Draft handoff". Inspect the draft and acknowledge the human-review checkbox;
+   "3. Copy for human review" stays disabled until acknowledged. Inspect the
+   copied handoff before manual transfer.
+5. Check SYN-PUMP-042, W17, elevated vibration, unknown temperature, duty engineer,
+   record/review only, human approval, and no created ticket.
+6. Try an equipment-change request; no tool or equipment operation may occur.
+7. In production, missing/wrong bearer fails closed; valid demo bearer permits
+   replay. Do not capture the secret in screenshots or logs.
+8. Only if approved credentials are available: uncheck replay, verify a streamed
+   live response and graceful auth/model failure. Record model and date privately.
+9. Review API invalid-input, concurrency and deadline behavior in security.txt.
+
+Docker (production configuration)
+  docker build -t muthur-terminal:local .
+Set GITHUB_TOKEN and DEMO_ACCESS_TOKEN securely in your shell first; then:
+  docker run --rm -p 3000:3000 --env GITHUB_TOKEN --env DEMO_ACCESS_TOKEN muthur-terminal:local
+Open localhost:3000, select "Synthetic support demo", and enter the demo token.
+Do not bake credentials into image
+layers or pass literal credentials in recorded command lines. Dependency
+installation needs network access; there is no remote font download. The image
+uses node:24-bookworm-slim (glibc required by the native runtime) and copies
+lockfile-installed @github native SDK/platform libraries and CLI 1.0.98 packages,
+including the .bin launcher, instead of installing a global unpinned CLI.
+The API uses explicit RuntimeConnection.forStdio CLI transport, resolving the
+locked local @github/copilot/npm-loader.js through createRequire. It does not rely
+on a system CLI or the SDK default runtime bundle download. CLI_PATH/NODE_PATH
+overrides remain available; the packaged .bin launcher supports manual CLI use.
+Local image build,
+container SDK import/RuntimeConnection and CLI version checks passed. A container
+CLI subprocess start/getStatus/stop check passed with protocol 3 and
+useLoggedInUser:false, without authentication or model invocation; authenticated
+live model access remains unverified.
+
+Troubleshooting
+- CLI startup/sqlite error: check Node version and CLI installation/authentication.
+- Unauthorized: verify demo bearer separately from the server Copilot credential.
+- Model unavailable: check COPILOT_MODEL and entitlement; use labeled replay.
+  Live preflight requires the model to appear in listModels with policy enabled;
+  missing/disabled entries return 503. Inference access still needs verification.
+- Busy/timeout: retry once after another request ends; do not assume global quota.
+- SSE stalls behind a proxy: check streaming/buffering and upstream timeouts.
+- Missing dependencies: npm ci; do not change lockfiles to bypass setup failures.
+- For cloud resources, ingress, ACR permissions and rollback: deployment.txt.

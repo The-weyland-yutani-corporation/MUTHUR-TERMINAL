@@ -24,13 +24,15 @@ on:
 #
 # 2. Per environment, create Azure resources:
 #      az group create --name <RG_NAME> --location eastus
-#      az acr create --name <ACR_NAME> --resource-group <RG_NAME> --sku Basic --admin-enabled true
+#      az acr create --name <ACR_NAME> --resource-group <RG_NAME> --sku Basic
 #      az containerapp env create --name <ENV_NAME> --resource-group <RG_NAME> --location eastus
 #      az containerapp create --name <APP_NAME> --resource-group <RG_NAME> \
 #        --environment <ENV_NAME> --image <ACR_NAME>.azurecr.io/muthur-terminal:latest \
 #        --target-port 3000 --ingress external
 #      az containerapp secret set --name <APP_NAME> --resource-group <RG_NAME> \
-#        --secrets github-token=<YOUR_FINE_GRAINED_PAT>
+#        --secrets github-token=<YOUR_FINE_GRAINED_PAT> demo-access-token=<RANDOM_32_PLUS_CHARACTERS>
+#    Configure managed-identity AcrPull access before deploying the private image.
+#    See docs/deployment.txt for bootstrap, access restrictions, and rollback.
 #
 # 3. Create Azure AD app + federated credentials (one per branch):
 #      az ad app create --display-name "muthur-github-actions"
@@ -40,12 +42,12 @@ on:
 #      # Staging credential
 #      az ad app federated-credential create --id <APP_ID> --parameters \
 #        '{"name":"github-staging","issuer":"https://token.actions.githubusercontent.com",
-#          "subject":"repo:<OWNER>/MUTHUR-Terminal:environment:staging",
+#          "subject":"repo:The-weyland-yutani-corporation/MUTHUR-TERMINAL:environment:staging",
 #          "audiences":["api://AzureADTokenExchange"]}'
 #      # Production credential
 #      az ad app federated-credential create --id <APP_ID> --parameters \
 #        '{"name":"github-production","issuer":"https://token.actions.githubusercontent.com",
-#          "subject":"repo:<OWNER>/MUTHUR-Terminal:environment:production",
+#          "subject":"repo:The-weyland-yutani-corporation/MUTHUR-TERMINAL:environment:production",
 #          "audiences":["api://AzureADTokenExchange"]}'
 #
 # 4. In EACH GitHub Environment, set these variables:
@@ -56,6 +58,11 @@ env:
   IMAGE_NAME: muthur-terminal
 
 jobs:
+  validate:
+    uses: ./.github/workflows/validate.yml
+    permissions:
+      contents: read
+
   # ── Job 1: Determine target environment ──
   resolve-env:
     runs-on: ubuntu-latest
@@ -80,7 +87,7 @@ jobs:
 
   # ── Job 2: Build & Deploy ──
   build-and-deploy:
-    needs: resolve-env
+    needs: [resolve-env, validate]
     runs-on: ubuntu-latest
     environment: ${{ needs.resolve-env.outputs.environment }}
     permissions:
@@ -123,3 +130,5 @@ jobs:
           imageToDeploy: ${{ vars.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
           environmentVariables: >-
             GITHUB_TOKEN=secretref:github-token
+            DEMO_ACCESS_TOKEN=secretref:demo-access-token
+            COPILOT_MODEL=${{ vars.COPILOT_MODEL || 'claude-sonnet-4-5' }}

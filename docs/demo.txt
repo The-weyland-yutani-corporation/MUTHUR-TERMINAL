@@ -1,0 +1,128 @@
+DEMO AND CUSTOMER ENGAGEMENT
+
+Primary audience: developers and platform engineers evaluating AI application
+development patterns. Secondary: solution engineers, CSAs and product owners.
+The synthetic support coordinator/duty engineer journey is the demonstration
+scenario, not the target buyer or a production support product.
+Story: a coordinator receives a synthetic equipment warning. An assistant drafts
+an evidence-bounded handoff; the duty engineer retains all operational decisions.
+This is a prototype narrative, not a customer reference or validated outcome.
+
+Preparation
+1. Follow setup.txt. Open the root URL, select "Synthetic support demo", and
+   confirm offline replay is checked. Query-string selection is not implemented.
+2. Use only synthetic data. SYN-PUMP-042 has warning W17, elevated vibration, and
+   unknown temperature. SYN-RUNBOOK-01 permits only recording observations and
+   requesting duty engineer review. Do not operate/change equipment.
+3. Rehearse /help and the prompt below. Keep this text as the fallback if the UI
+   is unavailable. State "deterministic offline replay" before presenting.
+4. Do not expose a server GitHub token, browser demo token, or real incident data.
+
+Five-minute journey
+0:00-0:45  Establish the coordinator's need: a safe, reviewable handoff.
+0:45-1:30  Select "Synthetic support demo"; show offline checkbox and /help.
+1:30-3:00  Click "1. Load synthetic request", press Enter to submit the loaded
+           request, then click "2. Draft handoff".
+           Alternatively enter: "Summarize SYN-PUMP-042 warning W17 and prepare
+           a duty engineer handoff." Explain replay is fixed evidence, not AI.
+3:00-4:15  Read facts, unknowns, owner, next action, and human approval requirement.
+           Temperature must remain unknown; W17 does not establish a root cause.
+4:15-5:00  Inspect the draft and acknowledge the human-review checkbox. Copy remains
+           disabled until acknowledgement. Click "3. Copy for human review" and
+           inspect the copied text before manual transfer.
+           Ask the reviewer to identify the next accountable human. Close with
+           readiness blockers and agree a scoped evaluation, not a purchase claim.
+
+Fifteen-minute journey
+0:00-3:00  Discover the audience's intake pain, approved evidence sources, and
+           decision owner. Define success before showing the app.
+3:00-8:00  Run the five-minute journey above.
+8:00-10:00 Ask "Can you restart SYN-PUMP-042 and open a ticket?" Explain that tools
+           are disabled, no ticket exists, and equipment changes are out of scope.
+           Replay stays deterministic; it is not proof of live refusal behavior.
+10:00-12:00 Demonstrate /clear, repeat the handoff, then use recovery below.
+12:00-14:00 Show architecture and security boundaries. If independently verified
+           and approved, uncheck replay for a live comparison; label it LIVE.
+           Otherwise explicitly defer the live segment rather than imply success.
+14:00-15:00 Agree owner, evidence, acceptance criteria, and follow-up review date.
+
+Expected handoff (not an operational instruction)
+Facts: SYN-PUMP-042; W17; vibration elevated; SYN-RUNBOOK-01 is synthetic.
+Unknowns: temperature, cause, severity beyond supplied evidence.
+Owner: duty engineer.
+Next action: record warning/observations and request duty engineer review.
+Approval: human review required; no equipment action authorized; no ticket created.
+
+Recovery
+- /clear resets the visible transcript; it is not a credential rotation control.
+- An invalid/missing production demo token should be rejected. Correct the
+  browser password field without showing the credential on screen. The browser
+  does not persist the token; re-enter it after a page reload.
+- Live auth/model failure: explain the limitation, re-check offline replay,
+  clear the transcript, and repeat. Never silently portray replay as a live result.
+- Slow/failed stream: stop waiting after the bounded request; retry once with a
+  smaller prompt. Do not replay a consequential action (none is supported here).
+- UI/server unavailable: read the expected handoff above; label it a text walkthrough.
+
+Account-team opener
+"We can show a reusable streaming AI application pattern without connecting to
+your equipment or moving customer data. This five-minute synthetic replay makes
+facts, uncertainty and human ownership visible. Would a bounded intake-to-review
+workflow be worth exploring with your developers and process owner?"
+State prototype status, original franchise context and rights-review gates before
+offering external reuse. Do not position the starter as a production triage product.
+
+Seven discovery questions
+1. Who owns this workflow and its handoff today, and where does work stall?
+2. Which repeated task or missing information causes the most rework or delay?
+3. Which sources and procedures are authoritative, current, and approved for use?
+4. Which decisions/actions must never be automated, and who retains accountability?
+5. What identity, access, retention, residency and consent requirements apply?
+6. What baseline do you measure today: cycle time, rework, completeness, or errors?
+7. Who approves output quality, owns an evaluation set, and decides go/no-go?
+
+Workshop proposal (before a pilot commitment)
+Invite the developer/platform lead, process owner, domain reviewer and security
+representative. Map one workflow using synthetic or approved anonymized examples.
+Deliver: workflow map, approved data/source inventory, target architecture,
+representative evaluation set, risk register, and written go/no-go recommendation.
+Record owners and unresolved rights, privacy, model, identity and deployment gates.
+Do not request real incident data in the public repository or demo browser.
+
+Bounded pilot proposal (only after applicable external gates close)
+Choose one workflow, approved evidence sources and a named human approver.
+Agree duration, participant group, environment, cost ceiling and stop conditions.
+Start read-only with tools disabled; separate replay results from authenticated
+live results. Any retrieval, ticketing or operational integration is a newly
+reviewed scope, not an existing capability. Compare against the agreed baseline.
+Deliver the workshop artifacts updated with observed evaluation results, failure
+cases, operational ownership, costs, residual risks and a go/no-go decision.
+
+Explicit success criteria
+- Evaluators reproduce the labeled replay without author assistance.
+- Every evaluated handoff contains supplied facts, explicit unknowns, accountable
+  owner, bounded next action and human approval; no fabricated measurements/ticket.
+- Domain reviewer approves a representative evaluation set and pre-agreed quality
+  threshold before live evaluation; record observed pass/fail, not invented scores.
+- No equipment changes or tool execution; unauthorized requests fail closed.
+- Approved identity/data boundaries hold; live/cloud and rollback are verified
+  independently before a pilot is called ready. Stop if any safety boundary fails.
+- Any time/quality improvement is measured against the discovered baseline; no
+  productivity, savings or business-value claim is implied by this replay.
+
+Close / call to action
+"Nominate an owner and bring three anonymized examples through an approved secure
+channel. We will scope a workshop, agree quality and safety gates, and return a
+go/no-go proposal." Agree the reviewer, next meeting and decision date; do not
+promise production deployment, catalog acceptance, or an SLA.
+
+Fixed synthetic replay evidence
+docs/assets/hero.png, commands.png, journey.png, recovery.png and mobile.png are
+actual successful local replay captures. demo.mp4 is a five-minute edited,
+captioned screenshot walkthrough (silent; held frames), not a continuous screen
+recording. Its ten actual UI states are held for 45/45/20/50/35/20/15/25/35/10
+seconds (300 seconds total); this timing is editorial, not observed model latency.
+Sidecars: docs/assets/demo.vtt and docs/assets/transcript.txt.
+Implementation media is provided; independent accessibility/content review stays
+open. Screenshots and walkthrough are not proof of live auth, deployment or model
+grounding. The architecture is original explanatory artwork, not a cloud capture.

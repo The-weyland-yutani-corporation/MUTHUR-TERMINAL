@@ -1,0 +1,51 @@
+Streaming AI Starter — synthetic replay walkthrough
+
+This is a five-minute edited, captioned, silent screenshot walkthrough.
+Frames are real captures of the local application, held to match the presenter
+script; this is not a continuous screen recording.
+It is a FIXED SYNTHETIC REPLAY, not a live AI demonstration, model evaluation,
+cloud availability check, or operational recommendation. Captions are also
+available in demo.vtt.
+
+0:00 Customer story
+Developers need a repeatable starting point for exploring an AI interface.
+This demo joins a request, supplied context, a draft, and human review.
+No real equipment, customer data, or credentials are used.
+
+0:45 Discover commands
+Use /help and keyboard autocomplete. /clear resets the conversation.
+Replay intentionally ignores free-form inputs and always uses the sample.
+Disable replay only when the host has configured live Copilot access.
+
+1:30 Supply context
+Load the sample request: asset SYN-PUMP-042, warning W17, vibration elevated,
+temperature unknown. SYN-RUNBOOK-01 is an illustrative sample procedure:
+record observations and request duty engineer review; do not operate equipment.
+Submit with Enter.
+
+2:15 Review structure
+The draft separates facts from unknowns and identifies the duty engineer as
+review owner. Select Draft handoff to show a second interaction. Replay remains
+fixed; only a live model check can assess conversation handling and output quality.
+
+3:15 Human review
+Compare with the supplied sample procedure and acknowledge the review.
+Copy for human review enables manual transfer. This is not an approval engine.
+No ticket or incident is created.
+
+3:35 Recover
+A deliberately interrupted network request produces a visible error.
+Restore connectivity and retry the retained request. Never accept partial output
+as a completed handoff.
+
+4:15 Architecture and engagement
+The live path is browser -> Next.js API -> Copilot SDK/CLI -> model service.
+Replay bypasses the SDK/model. Azure Container Apps hosts the application.
+Azure OIDC deployment identity, Copilot credentials, and demo access are separate.
+Hosted use needs restricted ingress and appropriate controls beyond the shared
+demo token. Production, live model, licensing, and independent handoff evidence
+remain separate readiness gates.
+
+4:50 CTA
+Nominate a workflow owner and bring three anonymized examples. Agree authoritative
+context, human approval requirements, a baseline, and pilot acceptance criteria.

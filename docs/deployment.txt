@@ -1,0 +1,110 @@
+AZURE CONTAINER APPS — SOLE SUPPORTED CLOUD PATH
+
+Status: instructions, not evidence of a successful cloud deployment. Obtain
+subscription/tenant access, Azure CLI, Docker, resource creation and role-assignment
+permissions, budget approval, and the security/rights/owner reviews first.
+App Service is legacy, not an alternate supported path. Use .github/workflows/deploy.yml.
+Do not use a helper script as the deployment contract.
+
+One-time bootstrap per staging/production environment
+Choose unique names and an approved region. Commands below use shell variables
+you supply: RG, LOCATION, ACR, CAE, APP, IDENTITY, SUBSCRIPTION_ID.
+  az login
+  az account set --subscription "$SUBSCRIPTION_ID"
+  az extension add --name containerapp --upgrade
+  az provider register --namespace Microsoft.App
+  az provider register --namespace Microsoft.OperationalInsights
+  az group create --name "$RG" --location "$LOCATION"
+  az acr create --name "$ACR" --resource-group "$RG" --sku Basic --admin-enabled false
+  az containerapp env create --name "$CAE" --resource-group "$RG" --location "$LOCATION"
+Configure approved internal ingress/network/private access gateway for the target
+environment before exposure; network design and gateway provisioning are owned by
+your platform team, not automated here.
+
+Baseline image and managed identity
+The first app cannot pull a nonexistent image. Build/push an immutable baseline
+before app creation; do not bootstrap with a mutable latest tag.
+  TAG=$(git rev-parse HEAD)
+  LOGIN_SERVER=$(az acr show --name "$ACR" --query loginServer -o tsv)
+  ACR_ID=$(az acr show --name "$ACR" --query id -o tsv)
+  az acr login --name "$ACR"
+  docker build -t "$LOGIN_SERVER/muthur-terminal:$TAG" .
+  docker push "$LOGIN_SERVER/muthur-terminal:$TAG"
+The operator/build identity needs ACR push permission. Dependency installation
+needs network access, but system Courier/monospace avoids remote font fetching.
+Images use node:24-bookworm-slim for native runtime glibc compatibility and copy
+lockfile-installed @github native SDK/platform libraries and CLI 1.0.98 packages,
+including the .bin launcher, not a global unpinned CLI installation. CLI 1.0.98
+matches SDK 1.0.22's declared CLI version. The API uses explicit
+RuntimeConnection.forStdio CLI transport with createRequire resolving the locked
+@github/copilot/npm-loader.js, avoiding the default SDK runtime bundle download
+and system CLI. Local image/import/CLI checks and an unauthenticated container
+subprocess start/getStatus/stop check passed.
+These local checks are not evidence of authenticated model or Azure deployment.
+  az identity create --name "$IDENTITY" --resource-group "$RG"
+  IDENTITY_ID=$(az identity show --name "$IDENTITY" --resource-group "$RG" --query id -o tsv)
+  PRINCIPAL_ID=$(az identity show --name "$IDENTITY" --resource-group "$RG" --query principalId -o tsv)
+  az role assignment create --assignee-object-id "$PRINCIPAL_ID" --assignee-principal-type ServicePrincipal --role AcrPull --scope "$ACR_ID"
+Allow role propagation before first pull. Use the identity for registry access;
+do not enable ACR admin credentials as a shortcut.
+
+Set GITHUB_TOKEN and DEMO_ACCESS_TOKEN using your approved secret-management
+process (never literal values in history/logs); demo token must be >=32 characters.
+The following expands shell secrets into CLI arguments: run only in a controlled
+operator environment with command tracing/recording disabled. Prefer your approved
+vault integration where available.
+  az containerapp create --name "$APP" --resource-group "$RG" --environment "$CAE" --image "$LOGIN_SERVER/muthur-terminal:$TAG" --user-assigned "$IDENTITY_ID" --registry-server "$LOGIN_SERVER" --registry-identity "$IDENTITY_ID" --ingress internal --target-port 3000 --secrets "github-token=$GITHUB_TOKEN" "demo-access-token=$DEMO_ACCESS_TOKEN" --env-vars GITHUB_TOKEN=secretref:github-token DEMO_ACCESS_TOKEN=secretref:demo-access-token
+NODE_ENV=production is set in the image. Optionally configure COPILOT_MODEL after
+verifying entitlement; default is claude-sonnet-4-5. Internal ingress needs an
+approved gateway/network path for reviewers; do not replace it with public access
+just to make a demonstration convenient.
+
+GitHub Actions OIDC setup
+1. Create GitHub Environments staging and production; require production reviewers.
+2. Create an Entra application/service principal for deployment. Assign scoped
+   resource-group deployment permissions plus AcrPush on this registry. Contributor
+   alone does not grant registry data-plane push. Limit further where practical.
+3. Add federated credentials with issuer https://token.actions.githubusercontent.com
+   and audience api://AzureADTokenExchange. Environment subjects must be EXACT:
+     repo:OWNER/REPOSITORY:environment:staging
+     repo:OWNER/REPOSITORY:environment:production
+   Replace OWNER/REPOSITORY with the repository's exact actual case, not a copied
+   spelling from an example. These are environment subjects, not branch subjects.
+4. In EACH GitHub Environment set variables (not runtime secrets):
+   AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID,
+   AZURE_CONTAINER_APP_NAME, AZURE_RESOURCE_GROUP, AZURE_CONTAINER_REGISTRY.
+5. Keep runtime secrets github-token and demo-access-token in Container Apps.
+   The workflow references them; OIDC is not the Copilot runtime credential.
+6. Review .github/workflows/deploy.yml before execution. main targets production,
+   staging targets staging; manual dispatch selects an environment. Protect both
+   branches/environments. The workflow builds/pushes SHA and latest tags and
+   deploys the SHA tag. Record the successful SHA; do not use latest for rollback.
+   .github/workflows/validate.yml runs PR lint/build and is the reusable deployment
+   gate. Passing validation is not evidence of authenticated model/cloud access.
+
+Verify before inviting users
+- Revision ready, managed identity can pull, private gateway enforces org access.
+- Missing/wrong browser demo bearer rejected; valid bearer permits replay.
+- Select "Synthetic support demo" at the root URL and explicitly replay the
+  fixture using its default offline checkbox; authenticated live SSE separately
+  verified when approved. Check timeouts, error paths and no secret/transcript logs.
+- Monitor revision health, failures, latency and spend; set Azure budget alerts.
+  Application concurrency is per process, not a fleet-wide quota or budget limit.
+
+Rollback
+Set PREVIOUS_TAG to a known-good immutable commit tag recorded during validation:
+  az containerapp update --name "$APP" --resource-group "$RG" --image "$LOGIN_SERVER/muthur-terminal:$PREVIOUS_TAG"
+Verify revision readiness and traffic routing, then repeat bearer/replay/live
+checks. If multiple revisions are active, explicitly route traffic to the approved
+revision using your platform's change process. Image rollback does not restore
+changed secrets/configuration; review those separately.
+
+Cleanup and costs
+Container Apps, ACR, logs, network/gateway and model usage can incur charges even
+between demos. Scale settings and budgets are not implemented cost guarantees.
+After approval, delete only the dedicated demo resource group:
+  az group delete --name "$RG" --yes --no-wait
+Check completion, remove dedicated Entra federated credentials/service principal
+and role assignments as appropriate, revoke runtime tokens, and remove unused
+GitHub environment configuration. Shared resources require individual cleanup;
+never delete a shared group. Retain only approved, sanitized validation evidence.

@@ -1,11 +1,11 @@
 # ── Stage 1: Install dependencies ──
-FROM node:24-alpine AS deps
+FROM node:24-bookworm-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
 
 # ── Stage 2: Build ──
-FROM node:24-alpine AS builder
+FROM node:24-bookworm-slim AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -13,7 +13,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 # ── Stage 3: Production ──
-FROM node:24-alpine AS runner
+FROM node:24-bookworm-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -21,20 +21,19 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
 
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
-
-# Install Copilot CLI globally (needed by the SDK at runtime)
-RUN npm install -g @github/copilot
+RUN groupadd --system --gid 1001 nodejs && \
+    useradd --system --uid 1001 --gid nodejs --create-home nextjs
 
 # Copy built app (public first, then standalone which includes server.js + node_modules)
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Symlink the globally-installed @github/copilot into the app's node_modules
-# so the SDK can resolve it (standalone output has isolated node_modules)
-RUN ln -s /usr/local/lib/node_modules/@github/copilot ./node_modules/@github/copilot
+# Preserve lockfile-installed SDK/CLI platform packages and executable permissions.
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/@github ./node_modules/@github
+ENV PATH="/app/node_modules/.bin:${PATH}"
+RUN mkdir -p node_modules/.bin && \
+    ln -s ../@github/copilot/npm-loader.js node_modules/.bin/copilot
 
 USER nextjs
 EXPOSE 3000
