@@ -1,5 +1,11 @@
 READINESS CHECKLIST — PROTOTYPE, NOT CATALOG-READY
 
+Final implementation review: a request-slot exhaustion issue was corrected with
+bounded SDK cleanup/retirement and regression checks. Lint, TypeScript, and the
+production build passed after the fix. The final aggregate Code Review/CodeQL
+tool could not run because its time limit was reached; rerun it before external
+approval. Earlier scans are not a substitute for scanning the final revision.
+
 Readiness summary
 Repository: https://github.com/The-weyland-yutani-corporation/MUTHUR-TERMINAL
 MUTHUR Terminal — Streaming AI Experience Starter is a reusable, cross-industry

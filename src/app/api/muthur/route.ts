@@ -289,7 +289,12 @@ export async function POST(request: NextRequest) {
           onPermissionRequest: () => ({ kind: "denied-by-rules", rules: [] }),
           infiniteSessions: { enabled: false },
         });
-      })();
+      })().catch(async (error) => {
+        if (owner && !lifetime.signal.aborted && !(error instanceof RequestError)) {
+          await retireClient(owner);
+        }
+        throw error;
+      });
       await withinDeadline(setup, lifetime.signal);
       lifetime.signal.throwIfAborted();
       if (owner?.retired) throw new RequestError(503, "Service unavailable.");
