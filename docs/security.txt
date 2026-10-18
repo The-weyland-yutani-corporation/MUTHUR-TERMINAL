@@ -31,6 +31,10 @@ Abuse controls
 - SSE wire output cap: 64 KiB, including UTF-8 encoding and JSON framing.
 - Maximum 24 messages, 8,000 characters per message, 24,000 characters total.
 - Maximum four concurrent requests per server process; 60-second deadline.
+- Cleanup has a separate two-second watchdog plus bounded client retirement.
+  A stalled SDK may interrupt other live requests when its CLI is retired.
+  If termination cannot be confirmed, live requests fail closed until restart;
+  authenticated replay remains available and request slots are released.
 - These are process-local guards, not distributed rate limiting, user quotas,
   fleet-wide cost controls, or protection from all denial-of-service patterns.
 - Multi-replica deployments need gateway quotas, budgets, identity and monitoring.
@@ -66,6 +70,8 @@ Do not expose development CLI/MCP services to untrusted networks or inputs.
 An unrelated development dependency overhaul is not included in this change.
 Do not interpret the runtime-only result as an overall clean audit or proof of
 absence of vulnerabilities. Re-run audits when the lockfile or advisory data changes.
+Changed-file secret scans do not certify the repository's full commit history;
+the security owner must review history and any external media before publication.
 Docker uses node:24-bookworm-slim for glibc compatibility and lockfile-installed
 @github native SDK/platform libraries and CLI packages with a .bin launcher, not
 an unpinned global CLI install. PR lint/build and the reusable deployment gate are in

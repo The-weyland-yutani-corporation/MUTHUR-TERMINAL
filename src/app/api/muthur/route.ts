@@ -10,12 +10,22 @@ export const runtime = "nodejs";
 const MAX_BODY_BYTES = 64 * 1024;
 const MAX_OUTPUT_BYTES = 64 * 1024;
 const DEADLINE_MS = 60_000;
+const CLEANUP_MS = 2_000;
+const RETIRE_MS = 2_000;
 const SSE_HEADERS = {
   "Content-Type": "text/event-stream",
   "Cache-Control": "no-cache, no-transform",
   Connection: "keep-alive",
 };
-let clientPromise: Promise<CopilotClient> | null = null;
+type ClientState = {
+  ready: Promise<CopilotClient>;
+  client?: CopilotClient;
+  retired: boolean;
+  retirement?: Promise<void>;
+};
+let clientState: ClientState | null = null;
+const retirements = new Set<Promise<void>>();
+let liveUnavailable = false;
 let activeRequests = 0;
 
 type ChatRequest = {
@@ -138,34 +148,62 @@ function withinDeadline<T>(operation: Promise<T>, signal: AbortSignal): Promise<
   });
 }
 
-function getClient(): Promise<CopilotClient> {
-  if (!clientPromise) {
-    const attempt = (async () => {
-      const { CopilotClient, RuntimeConnection } = await import("@github/copilot-sdk");
-      const cliPath = process.env.CLI_PATH ||
-        createRequire(import.meta.url).resolve("@github/copilot/npm-loader.js");
-      const client = new CopilotClient({
-        connection: RuntimeConnection.forStdio(process.env.NODE_PATH ? {
-          path: process.env.NODE_PATH,
-          args: [cliPath],
-        } : { path: cliPath }),
-        ...(process.env.GITHUB_TOKEN ? { gitHubToken: process.env.GITHUB_TOKEN } : {}),
-      });
-      const timeout = AbortSignal.timeout(DEADLINE_MS);
-      try {
-        await withinDeadline(client.start(), timeout);
+function withTimeout<T>(operation: Promise<T>, milliseconds: number): Promise<T> {
+  const timeout = new AbortController();
+  const timer = setTimeout(() => timeout.abort(), milliseconds);
+  return withinDeadline(operation, timeout.signal).finally(() => clearTimeout(timer));
+}
+
+function retireClient(state: ClientState): Promise<void> {
+  if (state.retirement) return state.retirement;
+  state.retired = true;
+  if (clientState === state) clientState = null;
+  const retirement = Promise.resolve().then(async () => {
+    if (!state.client) return;
+    try {
+      await withTimeout(state.client.forceStop(), RETIRE_MS);
+    } catch {
+      // If process termination cannot be confirmed, allow replay but no new live clients.
+      liveUnavailable = true;
+    }
+  });
+  state.retirement = retirement;
+  retirements.add(retirement);
+  void retirement.then(() => retirements.delete(retirement));
+  return retirement;
+}
+
+function getClientState(): ClientState {
+  if (liveUnavailable) throw new RequestError(503, "Service unavailable.");
+  if (!clientState) {
+    const state: ClientState = {
+      retired: false,
+      ready: Promise.resolve().then(async () => {
+        await Promise.all([...retirements]);
+        if (state.retired || liveUnavailable) throw new RequestError(503, "Service unavailable.");
+        const { CopilotClient, RuntimeConnection } = await import("@github/copilot-sdk");
+        if (state.retired) throw new RequestError(503, "Service unavailable.");
+        const cliPath = process.env.CLI_PATH ||
+          createRequire(import.meta.url).resolve("@github/copilot/npm-loader.js");
+        const client = new CopilotClient({
+          connection: RuntimeConnection.forStdio(process.env.NODE_PATH ? {
+            path: process.env.NODE_PATH,
+            args: [cliPath],
+          } : { path: cliPath }),
+          ...(process.env.GITHUB_TOKEN ? { gitHubToken: process.env.GITHUB_TOKEN } : {}),
+        });
+        state.client = client;
+        await withTimeout(client.start(), DEADLINE_MS);
+        if (state.retired) throw new RequestError(503, "Service unavailable.");
         return client;
-      } catch (error) {
-        void client.forceStop().catch(() => {});
+      }).catch((error) => {
+        void retireClient(state);
         throw error;
-      }
-    })();
-    clientPromise = attempt;
-    void attempt.catch(() => {
-      if (clientPromise === attempt) clientPromise = null;
-    });
+      }),
+    };
+    clientState = state;
   }
-  return clientPromise;
+  return clientState;
 }
 
 export async function POST(request: NextRequest) {
@@ -181,29 +219,42 @@ export async function POST(request: NextRequest) {
   request.signal.addEventListener("abort", disconnect, { once: true });
   if (request.signal.aborted) disconnect();
   let session: CopilotSession | undefined;
-  let sessionClient: CopilotClient | undefined;
+  let owner: ClientState | undefined;
   let setup: Promise<void> = Promise.resolve();
   let finished = false;
   let unsubscribe: (() => void) | undefined;
   let cleanup: Promise<void> | undefined;
+  let sessionCleanup: Promise<void> | undefined;
+  const disposeSession = (abortSession: boolean): Promise<void> => {
+    if (!session || !owner?.client) return Promise.resolve();
+    if (!sessionCleanup) {
+      const ownedSession = session;
+      const ownedState = owner;
+      const client = owner.client;
+      const teardown = Promise.all([
+        ...(abortSession ? [Promise.resolve().then(() => ownedSession.abort())] : []),
+        Promise.resolve().then(() => client.deleteSession(ownedSession.sessionId))
+          .finally(() => ownedSession.disconnect()),
+      ]);
+      sessionCleanup = withTimeout(teardown, CLEANUP_MS)
+        .then(() => {})
+        .catch(() => retireClient(ownedState));
+    }
+    return sessionCleanup;
+  };
   const finish = (abortSession: boolean) => {
     if (finished) return;
     finished = true;
     clearTimeout(timer);
     request.signal.removeEventListener("abort", disconnect);
     unsubscribe?.();
-    // Wait for late session creation before releasing the concurrency slot.
-    cleanup = setup.catch(() => {}).then(async () => {
-      if (session) {
-        const ownedSession = session;
-        // Delete ephemeral history even if the abort RPC never acknowledges cancellation.
-        await Promise.allSettled([
-          ...(abortSession ? [ownedSession.abort()] : []),
-          sessionClient!.deleteSession(ownedSession.sessionId)
-            .finally(() => ownedSession.disconnect()),
-        ]);
-      }
-    }).catch(() => {}).finally(() => { activeRequests--; });
+    // Observe late creation, but never let a stuck SDK RPC monopolize a request slot.
+    const draining = setup.catch(() => {}).then(() => disposeSession(abortSession));
+    cleanup = withTimeout(draining, CLEANUP_MS)
+      .catch(async () => {
+        if (owner) await retireClient(owner);
+      })
+      .finally(() => { activeRequests--; });
   };
 
   try {
@@ -211,12 +262,15 @@ export async function POST(request: NextRequest) {
     lifetime.signal.throwIfAborted();
     if (!input.offline) {
       setup = (async () => {
-        const client = await getClient();
-        sessionClient = client;
+        const state = getClientState();
+        owner = state;
+        const client = await state.ready;
         lifetime.signal.throwIfAborted();
+        if (state.retired) throw new RequestError(503, "Service unavailable.");
         const model = process.env.COPILOT_MODEL || "claude-sonnet-4-5";
         const models = await client.listModels();
         lifetime.signal.throwIfAborted();
+        if (state.retired) throw new RequestError(503, "Service unavailable.");
         if (!models.some((candidate) =>
           candidate.id === model && (!candidate.policy || candidate.policy.state === "enabled")
         )) {
@@ -238,6 +292,7 @@ export async function POST(request: NextRequest) {
       })();
       await withinDeadline(setup, lifetime.signal);
       lifetime.signal.throwIfAborted();
+      if (owner?.retired) throw new RequestError(503, "Service unavailable.");
     }
     const encoder = new TextEncoder();
     let controller: ReadableStreamDefaultController<Uint8Array>;
