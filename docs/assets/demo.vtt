@@ -1,0 +1,65 @@
+WEBVTT
+
+00:00.000 --> 00:15.000
+STREAMING AI STARTER — EDITED SCREENSHOT WALKTHROUGH
+Held frames of actual synthetic replay. No AI model is invoked.
+
+00:15.000 --> 00:30.000
+Customer story: developers need a repeatable way to explore AI interfaces
+without assembling presentation, streaming, and hosting from scratch.
+
+00:30.000 --> 00:45.000
+The useful outcome is a draft handoff for human review.
+This is not telemetry, diagnosis, or an autonomous equipment assistant.
+
+00:45.000 --> 01:05.000
+Command discovery: /help explains controls; /clear resets the conversation.
+Keyboard autocomplete also works in the fictional experience.
+
+01:05.000 --> 01:30.000
+Replay is deliberately labeled and ignores free-form requests.
+For live AI, disable replay and configure Copilot access on the host.
+
+01:30.000 --> 01:50.000
+Load the synthetic request: SYN-PUMP-042, warning W17,
+vibration elevated, temperature unknown.
+
+01:50.000 --> 02:15.000
+Submit supplied context and sample procedure SYN-RUNBOOK-01.
+Record observations and request duty engineer review; do not change equipment.
+
+02:15.000 --> 02:40.000
+Read FACTS and UNKNOWNS separately.
+The fixed replay demonstrates the expected structure, not model quality.
+
+02:40.000 --> 03:00.000
+Select Draft handoff to demonstrate the next interaction.
+In live mode, bounded conversation history accompanies each request.
+
+03:00.000 --> 03:15.000
+Inspect OWNER and NEXT ACTION.
+No ticket has been filed and no equipment action has been executed.
+
+03:15.000 --> 03:35.000
+Compare the draft with the supplied procedure, then acknowledge review.
+Copy for human review is a manual transfer, not an approval system.
+
+03:35.000 --> 03:50.000
+Recovery check: a deliberately interrupted network request fails visibly.
+Partial or failed responses must not be mistaken for completed work.
+
+03:50.000 --> 04:15.000
+Restore connectivity and retry the same synthetic request.
+The input is retained after failure; no incident was filed.
+
+04:15.000 --> 04:35.000
+Architecture: browser → Next.js API → Copilot SDK/CLI → model service.
+Replay bypasses the SDK and model. Azure hosts the container, not the model.
+
+04:35.000 --> 04:50.000
+Hosted access requires a separate demo token and restricted ingress.
+Azure deployment identity and runtime Copilot credentials are separate.
+
+04:50.000 --> 05:00.000
+Next step: nominate a workflow owner and three anonymized examples.
+Agree authoritative context, human approval, and pilot acceptance criteria.

@@ -1,0 +1,66 @@
+CUSTOMIZATION, REUSE AND SUPPORT
+
+Reuse boundary
+Reusable patterns: Next.js streaming terminal, SDK session boundary, deterministic
+replay, evidence/unknowns/owner/approval handoff, and bounded input handling.
+Not included: real telemetry, retrieval, ticket creation, equipment actions,
+enterprise identity, customer validation, or a production operations service.
+
+Reuse assessment
+Reusable: streaming terminal interaction, explicit replay/live selection, bounded
+API/SSE handling, tool-disabled SDK transport, human-review/copy pattern, and
+Container Apps deployment/validation patterns, subject to rights/owner approval.
+Customized: branding, wording, domain evidence, approved procedures, model choice,
+gateway/identity policy, retention, deployment names, and accountable reviewers.
+Anonymized: any future evaluation examples must remove identifiers, secrets and
+commercially sensitive context under the data owner's process; synthetic inputs
+remain preferred. Anonymization is not automatic or a guarantee of safe release.
+Template assets: demo.txt's timed story/discovery/workshop, setup.txt acceptance
+steps, architecture.mmd/svg, readiness.txt gates and draft accelerator.yaml.
+Fork/adapt these as starting points; replace scenario assumptions, validate actual
+catalog schema, and review all franchise material before external redistribution.
+
+Customization sequence
+1. Obtain owner and rights/branding approval. Do not assume a LICENSE or franchise
+   reuse rights. Neutral support UI does not remove franchise material elsewhere.
+2. Define one approved use case, data classification, accountable duty engineer
+   and a human approval gate. Start with synthetic evidence only.
+3. Review src/lib/system-prompt.ts (fiction persona) and the support fixture/prompt
+   under src/lib with the domain owner. Keep support separated from fiction.
+   Replace synthetic identifiers/observations and the approved procedure together;
+   do not leave a replay narrative that implies unimplemented integrations.
+4. Update the support UI, expected handoff, replay text, screenshots, and demo guide
+   together. Preserve explicit unknowns, replay labeling and no-action boundaries.
+5. COPILOT_MODEL changes require access verification, safety review and a fresh
+   live comparison; model availability is not guaranteed by configuration.
+6. Keep tools disabled. Adding retrieval, tickets, or operational tools is a new
+   security/integration scope, not a simple demo configuration option.
+7. Follow setup.txt acceptance, security.txt review and readiness.txt sign-off.
+
+Architecture navigation
+src/app/page.tsx: entry/experience selection.
+src/components/: boot, CRT shell and terminal interaction.
+src/app/api/muthur/route.ts: validation, auth, replay/live dispatch and SSE.
+src/lib/: persona, support evidence/prompt and command definitions.
+src/app/globals.css: phosphor/CRT styling; src/app/layout.tsx: system Courier/
+monospace font variable, with no remote font fetch.
+docs/architecture.mmd: editable diagram; architecture.svg: accessible rendered view.
+Dockerfile and .github/workflows/deploy.yml: supported Container Apps route.
+.github/workflows/validate.yml: PR lint/build and reusable deployment gate.
+
+Support process
+Owner: TBD. Support is best effort with no SLA, response-time promise, or managed
+service. Assign business, technical, security and deployment owners before handoff.
+For non-sensitive bugs, use repository issues if enabled with:
+- commit/image tag, Node/browser version, replay or live mode, approximate time;
+- synthetic reproduction steps, expected versus actual behavior, redacted error;
+- whether lint/build/manual acceptance passed and any network prerequisite issue.
+Do not attach tokens, production prompts, personal data, or raw provider logs.
+Use security.txt's private reporting path for vulnerabilities.
+
+Engagement and escalation
+Evaluator reproduces the synthetic journey first. A domain reviewer checks facts
+and uncertainty; a maintainer checks reproducibility; security/deployment owners
+review live/cloud evidence. Request an explicit go/no-go decision at each gate.
+For an unavailable model or cloud environment, use labeled replay and keep the
+blocker open; do not relabel a screenshot as authenticated validation.

@@ -1,0 +1,84 @@
+SECURITY AND RESPONSIBLE USE
+
+Boundary
+Prototype only; not an equipment control, diagnosis, ticketing, or emergency system.
+Use synthetic inputs only. No tools are enabled. A generated handoff is untrusted
+draft text requiring a duty engineer's approval. Never execute suggested commands
+or treat a warning code as a proven diagnosis.
+
+Modes and data
+POST /api/muthur accepts mode support or fiction; offline is a boolean supported
+only for support replay. Offline replay is explicitly selected and deterministic,
+not a fallback disguised as AI. Live inputs are sent server-side to Copilot/model
+services; assess provider terms, tenant policy, geography, retention and consent
+before any approved data use. Do not claim zero retention or compliance.
+Browser transcript state is not a durable case record. No ticket is created.
+Do not submit personal data, customer incidents, secrets, or regulated information.
+
+Three separate credentials
+1. Azure deploy OIDC: GitHub Actions federates to Azure, scoped to environment.
+2. Runtime GITHUB_TOKEN: server-only Copilot credential, stored as github-token.
+3. DEMO_ACCESS_TOKEN: shared demo bearer, stored as demo-access-token and entered
+   in the browser password field without browser persistence. Use TLS; never log
+   Authorization headers.
+Production requires a minimum 32-character demo token. This is not per-user auth,
+authorization, audit, revocation by user, or enterprise SSO. Keep the app behind an
+approved private access gateway and require organizational identity there. Do not
+publish an unrestricted internet endpoint or rely on the shared token alone.
+
+Abuse controls
+- Request body cap: 64 KiB.
+- SSE wire output cap: 64 KiB, including UTF-8 encoding and JSON framing.
+- Maximum 24 messages, 8,000 characters per message, 24,000 characters total.
+- Maximum four concurrent requests per server process; 60-second deadline.
+- Cleanup has a separate two-second watchdog plus bounded client retirement.
+  A stalled SDK may interrupt other live requests when its CLI is retired.
+  If termination cannot be confirmed, live requests fail closed until restart;
+  authenticated replay remains available and request slots are released.
+- These are process-local guards, not distributed rate limiting, user quotas,
+  fleet-wide cost controls, or protection from all denial-of-service patterns.
+- Multi-replica deployments need gateway quotas, budgets, identity and monitoring.
+Validate invalid bodies and rejection paths before deployment. Prompt instructions
+are not a security boundary; tools remain disabled even if a prompt requests them.
+Live mode preflights COPILOT_MODEL (default claude-sonnet-4-5) against listModels
+and enabled policy status. A missing or disabled entry safely returns 503; this
+check does not establish that authenticated inference will succeed.
+Replay emits the exact shared fixture once, then DONE, without calling the SDK.
+
+Operations
+Use least-privilege Azure roles and ACR pull identity; never commit secrets.
+Rotate credentials on exposure, revoke old values, update Container Apps secrets,
+restart affected revisions and revalidate. Avoid shell history/logging of values.
+Record request counts, errors, latency and revision identifiers without transcripts
+or tokens; establish an owner and retention policy before enabling telemetry.
+Maintain dependency/advisory review and image patching; no security certification
+or completed penetration test is asserted.
+
+Dependency audit evidence (implementation handoff)
+Advisory findings prompted exact pins to @github/copilot-sdk 1.0.22,
+@github/copilot 1.0.98, and Next.js 16.4.2. CLI 1.0.98 matches the SDK's declared
+CLI version and was advisory-checked. npm audit --omit=dev reports zero runtime
+findings. The full development audit still reports 26 findings: 2 low, 3 moderate,
+20 high and 1 critical. The critical proxy-addr finding concerns IPv4-mapped IPv6
+trust/IP spoofing in the development shadcn CLI MCP/Express dependency tree.
+Other development findings include shadcn/ts-morph glob, micromatch and braces;
+ESLint transitive/glob packages; Hono/MCP; and YAML/path-regex-related packages.
+No direct application runtime exposure has been evidenced for these residuals;
+that is not blanket clearance. Review dependency paths, actual tooling use,
+exposure and remediation with the security owner before approving distribution.
+Do not expose development CLI/MCP services to untrusted networks or inputs.
+An unrelated development dependency overhaul is not included in this change.
+Do not interpret the runtime-only result as an overall clean audit or proof of
+absence of vulnerabilities. Re-run audits when the lockfile or advisory data changes.
+Changed-file secret scans do not certify the repository's full commit history;
+the security owner must review history and any external media before publication.
+Docker uses node:24-bookworm-slim for glibc compatibility and lockfile-installed
+@github native SDK/platform libraries and CLI packages with a .bin launcher, not
+an unpinned global CLI install. PR lint/build and the reusable deployment gate are in
+.github/workflows/validate.yml; neither establishes authenticated model access.
+
+Vulnerability reporting
+Do not put exploit details, tokens, or sensitive incident data in public issues.
+Use the repository's private security advisory reporting if enabled. Otherwise
+ask the maintainer for a secure channel before sharing details. Named security
+owner and response targets are TBD; no SLA is offered.

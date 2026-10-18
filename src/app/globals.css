@@ -24,10 +24,11 @@
 }
 
 :root {
+  --font-terminal: "Courier New", Courier, monospace;
   --background: #0a0a0a;
   --foreground: #33ff33;
   --phosphor: #33ff33;
-  --phosphor-dim: #1a8c1a;
+  --phosphor-dim: #55b855;
   --phosphor-bright: #66ff66;
   --crt-bg: #0d1a0d;
   --crt-dark: #050a05;
@@ -149,7 +150,7 @@
 }
 
 .phosphor-text-dim {
-  color: #1a8c1a;
+  color: var(--phosphor-dim);
   text-shadow: 0 0 2px #1a8c1a, 0 0 6px #1a8c1a80;
 }
 
@@ -160,4 +161,30 @@
 .boot-line {
   animation: bootLine 0.3s ease-out forwards;
   opacity: 0;
+}
+
+.demo-button {
+  border: 1px solid #55b855;
+  padding: 0.25rem 0.5rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.demo-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button:focus-visible,
+input:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid #66ff66;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+  }
+  .boot-line { opacity: 1; }
 }

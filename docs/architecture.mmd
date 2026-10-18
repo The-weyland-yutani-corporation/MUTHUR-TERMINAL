@@ -1,0 +1,22 @@
+flowchart TB
+  browser["Browser: fiction default / Synthetic support demo button<br/>Support offline checkbox defaults true"]
+  gateway["Approved private access gateway<br/>organizational identity required for deployment"]
+  api["Next.js API /api/muthur<br/>Validate mode/body; production demo bearer gate<br/>64 KiB input + SSE output · 24 messages · 8k each / 24k total<br/>4 concurrent/process · 60s deadline"]
+  replay["Explicit offline support replay<br/>SYN-PUMP-042 / W17 / SYN-RUNBOOK-01<br/>No model call"]
+  sdk["Live support or fiction<br/>Copilot SDK + locked local CLI subprocess over stdio<br/>COPILOT_MODEL; tools disabled"]
+  model["Copilot/model service<br/>Runtime GITHUB_TOKEN stays server-side"]
+  handoff["SSE to browser: untrusted draft<br/>Facts · unknowns · duty engineer owner<br/>Next action · human approval · no ticket"]
+  gateway --> browser
+  browser -->|"Demo bearer: DEMO_ACCESS_TOKEN; not enterprise auth"| api
+  api -->|"support + offline true"| replay
+  api -->|"live"| sdk
+  sdk --> model
+  replay --> handoff
+  model --> handoff
+  subgraph deployment["Separate deployment trust boundary"]
+    actions["GitHub Actions environment"] -->|"Azure OIDC federation"| azure["Azure deployment identity"]
+    azure --> acr["ACR immutable SHA image"]
+    acr -->|"Managed identity / AcrPull"| aca["Azure Container Apps runtime"]
+  end
+  aca -. hosts .-> api
+  secrets["Container Apps secrets<br/>github-token: runtime Copilot<br/>demo-access-token: demo bearer"] -.-> aca

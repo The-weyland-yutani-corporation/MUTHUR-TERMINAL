@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 900" role="img" aria-labelledby="title desc">
+  <title id="title">Support terminal request and deployment architecture</title>
+  <desc id="desc">An approved private gateway protects the browser. The browser sends a separate demo bearer to the Next.js API. Validated requests take either explicit deterministic support replay or live tool-disabled Copilot SDK and CLI paths. Live credentials stay server-side. SSE returns a draft for duty engineer approval, not a ticket. Separately, GitHub Actions uses Azure OIDC to deploy an immutable ACR image to Container Apps with managed-identity AcrPull. Runtime Copilot and demo secrets are separate from Azure deployment credentials. Limits are process-local.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0 0 L9 3 L0 6Z" fill="#335572"/></marker>
+    <style>text{font-family:Arial,sans-serif;fill:#17324d;font-size:16px}.heading{font-size:21px;font-weight:bold}.small{font-size:14px}.box{fill:#f0f6fc;stroke:#335572;stroke-width:2}.line{fill:none;stroke:#335572;stroke-width:2;marker-end:url(#arrow)}</style>
+  </defs>
+  <rect width="1000" height="900" fill="white"/>
+  <text x="30" y="35" class="heading">Terminal prototype — request and credential boundaries</text>
+  <rect x="40" y="55" width="920" height="55" rx="8" class="box"/>
+  <text x="60" y="80">Approved private access gateway: organizational identity for deployed demos</text>
+  <text x="60" y="100" class="small">Shared demo token alone is not enterprise authentication.</text>
+  <path d="M500 110 V135" class="line"/>
+  <rect x="160" y="135" width="680" height="65" rx="8" class="box"/>
+  <text x="180" y="161">Browser: fiction default / Synthetic support demo button</text>
+  <text x="180" y="184">Explicit support offline checkbox defaults true</text>
+  <path d="M500 200 V245" class="line"/>
+  <text x="510" y="228" class="small">Demo bearer: DEMO_ACCESS_TOKEN</text>
+  <rect x="90" y="245" width="820" height="90" rx="8" class="box"/>
+  <text x="110" y="272">Next.js /api/muthur: validate input + production demo bearer gate</text>
+  <text x="110" y="296">64 KiB input + SSE output · 24 messages · 8,000 chars each / 24,000 total</text>
+  <text x="110" y="320">4 concurrent per process · 60-second deadline · not distributed quotas</text>
+  <path d="M280 335 V370" class="line"/><path d="M720 335 V370" class="line"/>
+  <rect x="40" y="370" width="450" height="115" rx="8" class="box"/>
+  <text x="60" y="399">Support + offline true: deterministic replay</text>
+  <text x="60" y="424">SYN-PUMP-042 / W17 / SYN-RUNBOOK-01</text>
+  <text x="60" y="450">Synthetic observations; no model call</text>
+  <text x="60" y="474" class="small">Record/review only; no equipment operation</text>
+  <rect x="520" y="370" width="440" height="115" rx="8" class="box"/>
+  <text x="540" y="399">Live: SDK + locked CLI subprocess over stdio</text>
+  <text x="540" y="424">COPILOT_MODEL · tools disabled</text>
+  <text x="540" y="450">Copilot/model service receives live input</text>
+  <text x="540" y="474" class="small">GITHUB_TOKEN: server-side runtime credential</text>
+  <path d="M265 485 V515 H500 V540" class="line"/><path d="M740 485 V515 H500" class="line"/>
+  <rect x="90" y="540" width="820" height="65" rx="8" class="box"/>
+  <text x="110" y="567">SSE to browser: facts · unknowns · duty engineer owner · next action</text>
+  <text x="110" y="590">Untrusted draft · human approval required · no ticket created</text>
+  <rect x="25" y="635" width="950" height="245" rx="10" fill="#fafafa" stroke="#335572" stroke-dasharray="6 4"/>
+  <text x="45" y="665" class="heading">Separate deployment trust boundary</text>
+  <rect x="45" y="690" width="265" height="65" rx="8" class="box"/>
+  <text x="60" y="716">GitHub Actions environment</text>
+  <text x="60" y="741">Azure OIDC federation</text>
+  <path d="M310 722 H345" class="line"/>
+  <rect x="345" y="690" width="260" height="65" rx="8" class="box"/>
+  <text x="360" y="716">Azure deployment identity</text>
+  <text x="360" y="741">ACR immutable SHA image</text>
+  <path d="M605 722 H650" class="line"/>
+  <rect x="650" y="690" width="305" height="65" rx="8" class="box"/>
+  <text x="665" y="716">Container Apps hosts API</text>
+  <text x="665" y="741">Managed identity / AcrPull</text>
+  <rect x="90" y="785" width="820" height="70" rx="8" class="box"/>
+  <text x="110" y="813">Container Apps secrets (not Azure OIDC credentials):</text>
+  <text x="110" y="840">github-token → runtime Copilot; demo-access-token → browser bearer gate</text>
+  <path d="M805 785 V755" class="line"/>
+</svg>
